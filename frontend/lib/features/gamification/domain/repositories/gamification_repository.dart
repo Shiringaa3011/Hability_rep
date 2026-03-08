@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 
 import '../../../../core/error/failures.dart';
 import '../entities/achievement.dart';
+import '../entities/group_achievement.dart';
 import '../entities/habit_stats.dart';
 import '../entities/user_level.dart';
 import '../entities/user_stats.dart';
@@ -18,7 +19,14 @@ abstract class GamificationRepository {
 
   Future<Either<Failure, List<Achievement>>> getAchievements(String userId);
 
-  Future<Either<Failure, void>> completeHabit(String habitId, String userId);
+  Future<Either<Failure, List<NewAchievementInfo>>> completeHabit(
+    String habitId,
+    String userId,
+  );
+
+  Future<Either<Failure, List<GroupAchievement>>> getGroupAchievements(
+    String groupId,
+  );
 
   Future<Either<Failure, void>> refreshData(String userId);
 }

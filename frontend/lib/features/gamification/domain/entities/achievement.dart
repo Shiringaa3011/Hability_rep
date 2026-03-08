@@ -1,5 +1,22 @@
 import 'package:equatable/equatable.dart';
 
+class NewAchievementInfo extends Equatable {
+  const NewAchievementInfo({
+    required this.achievementId,
+    required this.name,
+    required this.icon,
+    required this.rewardPoints,
+  });
+
+  final String achievementId;
+  final String name;
+  final String icon;
+  final int rewardPoints;
+
+  @override
+  List<Object?> get props => [achievementId, name, icon, rewardPoints];
+}
+
 enum AchievementType {
   streak,
   totalHabits,

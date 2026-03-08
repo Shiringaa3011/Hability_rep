@@ -11,7 +11,6 @@ class ServerException extends AppException {
   const ServerException([String message = 'Server error']) : super(message);
 }
 
-k
 class CacheException extends AppException {
   const CacheException([String message = 'Cache error']) : super(message);
 }

@@ -3,6 +3,7 @@ import 'package:dartz/dartz.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/achievement.dart';
+import '../../domain/entities/group_achievement.dart';
 import '../../domain/entities/habit_stats.dart';
 import '../../domain/entities/user_level.dart';
 import '../../domain/entities/user_stats.dart';
@@ -118,10 +119,13 @@ class GamificationRepositoryImpl implements GamificationRepository {
   }
 
   @override
-  Future<Either<Failure, void>> completeHabit(String habitId, String userId) async {
+  Future<Either<Failure, List<NewAchievementInfo>>> completeHabit(
+    String habitId,
+    String userId,
+  ) async {
     try {
-      await remoteDataSource.completeHabit(habitId, userId);
-      return const Right(null);
+      final newAchievements = await remoteDataSource.completeHabit(habitId, userId);
+      return Right(newAchievements);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } on NetworkException catch (e) {
@@ -129,6 +133,47 @@ class GamificationRepositoryImpl implements GamificationRepository {
     } catch (e) {
       return Left(ServerFailure('Unexpected error: $e'));
     }
+  }
+
+  @override
+  Future<Either<Failure, List<GroupAchievement>>> getGroupAchievements(
+    String groupId,
+  ) async {
+    try {
+      final raw = await remoteDataSource.getGroupAchievements(groupId);
+      final achievements = raw.map((m) {
+        final typeStr = m['type'] as String;
+        final type = GroupAchievementType.values.firstWhere(
+          (t) => t.name == _snakeToCamel(typeStr),
+          orElse: () => GroupAchievementType.groupTotalHabits,
+        );
+        return GroupAchievement(
+          id: m['id'] as String,
+          name: m['name'] as String,
+          description: m['description'] as String,
+          icon: m['icon'] as String,
+          type: type,
+          conditionValue: m['condition_value'] as int,
+          rewardPoints: m['reward_points'] as int,
+          isEarned: m['is_earned'] as bool,
+          progress: m['progress'] as int,
+          progressPercent: (m['progress_percent'] as num).toDouble(),
+        );
+      }).toList();
+      return Right(achievements);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Unexpected error: $e'));
+    }
+  }
+
+  static String _snakeToCamel(String snake) {
+    final parts = snake.split('_');
+    return parts.first +
+        parts.skip(1).map((p) => p[0].toUpperCase() + p.substring(1)).join();
   }
 
   @override
