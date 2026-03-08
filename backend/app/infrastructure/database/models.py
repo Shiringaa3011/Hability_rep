@@ -20,6 +20,7 @@ from sqlalchemy.sql import func
 
 from app.core.database import Base
 from app.domain.models.achievement import AchievementType
+from app.domain.models.group_achievement import GroupAchievementType
 from app.domain.models.habit import HabitFrequency
 from app.domain.models.stats import StatsPeriod
 
@@ -320,3 +321,75 @@ class UserStatsModel(Base):
         return (
             f"<UserStats(id={self.id}, user_id={self.user_id}, period={self.period})>"
         )
+
+
+class GroupAchievementModel(Base):
+    __tablename__ = "group_achievements"
+
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    name = Column(String(200), nullable=False, unique=True)
+    description = Column(Text, nullable=False)
+    icon = Column(String(100), nullable=False)
+    achievement_type = Column(  # type: ignore[var-annotated]
+        SQLEnum(
+            GroupAchievementType,
+            values_callable=lambda x: [e.value for e in x],
+        ),
+        nullable=False,
+        index=True,
+    )
+    condition_value = Column(Integer, nullable=False)
+    reward_points = Column(Integer, nullable=False, default=0)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+    earned = relationship(
+        "EarnedGroupAchievementModel",
+        back_populates="achievement",
+        cascade="all, delete-orphan",
+    )
+
+    __table_args__ = (
+        Index(
+            "ix_group_achievements_type_active",
+            "achievement_type",
+            "is_active",
+        ),
+    )
+
+    def __repr__(self):
+        return f"<GroupAchievement(id={self.id}, name={self.name})>"
+
+
+class EarnedGroupAchievementModel(Base):
+    __tablename__ = "earned_group_achievements"
+
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    group_id = Column(
+        GUID,
+        ForeignKey("groups.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    achievement_id = Column(
+        GUID,
+        ForeignKey("group_achievements.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    earned_at = Column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    notified = Column(Boolean, nullable=False, default=False)
+
+    group = relationship("GroupModel")
+    achievement = relationship(
+        "GroupAchievementModel", back_populates="earned"
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "group_id",
+            "achievement_id",
+            name="uq_group_achievement_earned",
+        ),
+    )
