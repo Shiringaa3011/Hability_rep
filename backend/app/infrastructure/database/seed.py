@@ -321,8 +321,9 @@ async def seed_database():
 
         # Create a group
         print("Creating groups...")
+        group1_id = uuid.UUID("00000000-0000-0000-0000-000000000010")
         group1 = GroupModel(
-            id=uuid.uuid4(),
+            id=group1_id,
             name="Morning Enthusiasts",
             description="Group for people who love morning routines",
             created_by=user1.id,

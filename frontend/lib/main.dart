@@ -3,9 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'features/gamification/presentation/bloc/achievements/achievements_bloc.dart';
+import 'features/gamification/presentation/bloc/group_achievements/group_achievements_bloc.dart';
 import 'features/gamification/presentation/bloc/level/level_bloc.dart';
 import 'features/gamification/presentation/bloc/stats/stats_bloc.dart';
 import 'features/gamification/presentation/pages/achievements_page.dart';
+import 'features/gamification/presentation/pages/group_achievements_page.dart';
 import 'features/gamification/presentation/pages/level_page.dart';
 import 'features/gamification/presentation/pages/stats_page.dart';
 import 'injection_container.dart' as di;
@@ -48,6 +50,7 @@ class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
   static const String mockUserId = '00000000-0000-0000-0000-000000000001';
+  static const String mockGroupId = '00000000-0000-0000-0000-000000000010';
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +69,10 @@ class _HomePageState extends State<HomePage> {
           BlocProvider(
             create: (_) => di.sl<AchievementsBloc>(),
             child: const AchievementsPage(userId: mockUserId),
+          ),
+          BlocProvider(
+            create: (_) => di.sl<GroupAchievementsBloc>(),
+            child: const GroupAchievementsPage(groupId: mockGroupId),
           ),
         ],
       ),
@@ -88,6 +95,10 @@ class _HomePageState extends State<HomePage> {
           NavigationDestination(
             icon: Icon(Icons.stars),
             label: 'Достижения',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.groups),
+            label: 'Группа',
           ),
         ],
       ),
