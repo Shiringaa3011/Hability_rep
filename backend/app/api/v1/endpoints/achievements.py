@@ -124,3 +124,55 @@ async def check_new_achievements(user_id: UUID, db: AsyncSession = Depends(get_d
             for ua in new_achievements
         ],
     }
+
+
+@router.get(
+    "/user/{user_id}/new",
+    response_model=UserAchievementsListResponse,
+)
+async def get_new_achievements(user_id: UUID, db: AsyncSession = Depends(get_db)):
+    """Return achievements that have not yet been shown to the user (notified=False)."""
+    service = AchievementService(db)
+
+    unnotified = await service.user_achievement_repo.get_unnotified_achievements(user_id)
+
+    enriched = []
+    for ua in unnotified:
+        achievement = await service.achievement_repo.get_by_id(ua.achievement_id)  # type: ignore[arg-type]
+        enriched.append(
+            UserAchievementResponse(
+                id=ua.id,  # type: ignore[arg-type]
+                user_id=ua.user_id,  # type: ignore[arg-type]
+                achievement_id=ua.achievement_id,  # type: ignore[arg-type]
+                earned_at=ua.earned_at,  # type: ignore[arg-type]
+                notified=ua.notified,  # type: ignore[arg-type]
+                achievement=AchievementResponse(
+                    id=achievement.id,  # type: ignore[arg-type]
+                    name=achievement.name,  # type: ignore[arg-type]
+                    description=achievement.description,  # type: ignore[arg-type]
+                    icon=achievement.icon,  # type: ignore[arg-type]
+                    type=achievement.achievement_type,  # type: ignore[arg-type]
+                    condition_value=achievement.condition_value,  # type: ignore[arg-type]
+                    reward_points=achievement.reward_points,  # type: ignore[arg-type]
+                    is_active=achievement.is_active,  # type: ignore[arg-type]
+                )
+                if achievement
+                else None,
+            )
+        )
+
+    return UserAchievementsListResponse(
+        user_id=user_id,
+        earned_achievements=enriched,
+        total_earned=len(enriched),
+    )
+
+
+@router.post("/user/{user_id}/notify", status_code=status.HTTP_200_OK)
+async def mark_achievements_notified(user_id: UUID, db: AsyncSession = Depends(get_db)):
+    """Mark all unnotified achievements as seen. Call after showing them to the user."""
+    service = AchievementService(db)
+
+    count = await service.user_achievement_repo.mark_all_as_notified(user_id)
+
+    return {"user_id": str(user_id), "marked_count": count}

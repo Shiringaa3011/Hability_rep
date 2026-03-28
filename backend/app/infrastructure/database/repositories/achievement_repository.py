@@ -78,3 +78,10 @@ class UserAchievementRepository(BaseRepository[UserAchievementModel]):
             await self.update(user_achievement)
             return True
         return False
+
+    async def mark_all_as_notified(self, user_id: UUID) -> int:
+        unnotified = await self.get_unnotified_achievements(user_id)
+        for ua in unnotified:
+            ua.notified = True  # type: ignore[assignment]
+            await self.update(ua)
+        return len(unnotified)
