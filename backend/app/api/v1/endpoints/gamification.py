@@ -3,10 +3,12 @@ from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.domain.services.achievement_service import AchievementService
 from app.domain.services.gamification_service import GamificationService
 from app.schemas.gamification import (
     CompleteHabitRequest,
     CompleteHabitResponse,
+    NewAchievementInfo,
     UserLevelResponse,
     UserPointsResponse,
 )
@@ -31,6 +33,26 @@ async def complete_habit(
             completion_date=request.completion_date,
         )
 
+        achievement_service = AchievementService(db)
+        newly_awarded = await achievement_service.check_and_award_achievements(
+            request.user_id
+        )
+
+        new_achievements = []
+        for ua in newly_awarded:
+            achievement = await achievement_service.achievement_repo.get_by_id(
+                ua.achievement_id  # type: ignore[arg-type]
+            )
+            if achievement:
+                new_achievements.append(
+                    NewAchievementInfo(
+                        achievement_id=achievement.id,  # type: ignore[arg-type]
+                        name=achievement.name,  # type: ignore[arg-type]
+                        icon=achievement.icon,  # type: ignore[arg-type]
+                        reward_points=achievement.reward_points,  # type: ignore[arg-type]
+                    )
+                )
+
         return CompleteHabitResponse(
             completion_id=completion.id,  # type: ignore[arg-type]
             habit_id=completion.habit_id,  # type: ignore[arg-type]
@@ -38,6 +60,7 @@ async def complete_habit(
             completed_at=completion.completed_at,  # type: ignore[arg-type]
             points_earned=completion.points_earned,  # type: ignore[arg-type]
             current_streak=completion.current_streak,  # type: ignore[arg-type]
+            new_achievements=new_achievements,
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

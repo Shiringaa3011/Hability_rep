@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -13,6 +13,13 @@ class CompleteHabitRequest(BaseModel):
     )
 
 
+class NewAchievementInfo(BaseModel):
+    achievement_id: UUID
+    name: str
+    icon: str
+    reward_points: int
+
+
 class CompleteHabitResponse(BaseModel):
     completion_id: UUID = Field(..., description="Completion record ID")
     habit_id: UUID
@@ -20,6 +27,10 @@ class CompleteHabitResponse(BaseModel):
     completed_at: datetime
     points_earned: int = Field(..., description="Points awarded for this completion")
     current_streak: int = Field(..., description="Current streak after this completion")
+    new_achievements: List[NewAchievementInfo] = Field(
+        default_factory=list,
+        description="Achievements earned from this completion",
+    )
 
     class Config:
         from_attributes = True

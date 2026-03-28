@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 
 import '../../../../core/error/failures.dart';
+import '../entities/achievement.dart';
 import '../repositories/gamification_repository.dart';
 
 class CompleteHabitParams {
@@ -18,7 +19,9 @@ class CompleteHabit {
 
   final GamificationRepository repository;
 
-  Future<Either<Failure, void>> call(CompleteHabitParams params) async {
+  Future<Either<Failure, List<NewAchievementInfo>>> call(
+    CompleteHabitParams params,
+  ) async {
     return await repository.completeHabit(params.habitId, params.userId);
   }
 }
