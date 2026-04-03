@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -5,6 +7,7 @@ import '../../domain/entities/user_stats.dart';
 import '../bloc/stats/stats_bloc.dart';
 import '../bloc/stats/stats_event.dart';
 import '../bloc/stats/stats_state.dart';
+import '../widgets/charts/progress_chart.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/streak_indicator.dart';
 
@@ -180,12 +183,23 @@ class _StatsPageState extends State<StatsPage> {
           ],
         ),
         const SizedBox(height: 24),
-        
         StatCard(
           title: 'Баллы за период',
           value: '${state.stats.totalPointsEarned}',
           icon: Icons.stars,
           color: Colors.purple,
+        ),
+        const SizedBox(height: 24),
+        Text(
+          'Доля выполнений',
+          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Center(
+          child: ProgressChart(
+            completed: state.stats.totalCompletions,
+            total: _estimatedSlots(state.stats),
+          ),
         ),
         const SizedBox(height: 24),
 
@@ -227,5 +241,15 @@ class _StatsPageState extends State<StatsPage> {
     if (rate >= 80) return Colors.green;
     if (rate >= 50) return Colors.orange;
     return Colors.red;
+  }
+
+  // Оценка 'всего слотов' для круговой диаграммы
+  int _estimatedSlots(UserStats stats) {
+    if (stats.completionRate <= 0.5) {
+      return max(stats.totalCompletions + 5, 5);
+    }
+    final est =
+        (stats.totalCompletions / (stats.completionRate / 100)).round();
+    return max(est, stats.totalCompletions + 1);
   }
 }

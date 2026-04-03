@@ -186,6 +186,7 @@ def upgrade() -> None:
             server_default=sa.func.now(),
         ),
         sa.ForeignKeyConstraint(["created_by"], ["users.id"], ondelete="CASCADE"),
+        # is_active
     )
     op.create_index("ix_groups_created_by", "groups", ["created_by"])
 
