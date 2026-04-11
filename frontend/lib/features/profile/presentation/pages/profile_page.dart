@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/design_system/design_system.dart';
+import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../injection_container.dart' as di;
 import '../../../gamification/domain/entities/user_level.dart';
 import '../../../gamification/presentation/bloc/level/level_bloc.dart';
 import '../../../gamification/presentation/bloc/level/level_event.dart';
 import '../../../gamification/presentation/bloc/level/level_state.dart';
+import '../../../gamification/presentation/pages/level_page.dart';
 import '../../../notifications/presentation/pages/notification_history_page.dart';
 import '../../../notifications/presentation/pages/notification_settings_page.dart';
 
@@ -49,7 +51,7 @@ class _ProfileScaffold extends StatelessWidget {
         children: [
           _Header(),
           const SizedBox(height: AppSpacing.xl),
-          const _IdentityCard(),
+          _IdentityCard(userId: userId),
           const SizedBox(height: AppSpacing.xl),
           DSSectionHeader(label: 'Настройки'),
           const SizedBox(height: AppSpacing.md),
@@ -72,6 +74,122 @@ class _ProfileScaffold extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: AppSpacing.sm),
+          ListenableBuilder(
+            listenable: ThemeModeController.instance,
+            builder: (context, _) => _MenuItem(
+              icon: _themeIcon(ThemeModeController.instance.value),
+              label: 'Оформление',
+              value: ThemeModeController.instance.displayLabel,
+              onTap: () => _showThemeSheet(context),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static IconData _themeIcon(ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.light:
+        return DSIcons.lightMode;
+      case ThemeMode.dark:
+        return DSIcons.darkMode;
+      case ThemeMode.system:
+        return DSIcons.systemMode;
+    }
+  }
+
+  static Future<void> _showThemeSheet(BuildContext context) async {
+    final colors = context.appColors;
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: colors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Оформление',
+                  style: AppTextStyles.titleMedium.copyWith(color: colors.foreground),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                _ThemeOption(
+                  mode: ThemeMode.system,
+                  icon: DSIcons.systemMode,
+                  label: 'Системная',
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _ThemeOption(
+                  mode: ThemeMode.light,
+                  icon: DSIcons.lightMode,
+                  label: 'Светлая',
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _ThemeOption(
+                  mode: ThemeMode.dark,
+                  icon: DSIcons.darkMode,
+                  label: 'Тёмная',
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ThemeOption extends StatelessWidget {
+  const _ThemeOption({
+    required this.mode,
+    required this.icon,
+    required this.label,
+  });
+
+  final ThemeMode mode;
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final selected = ThemeModeController.instance.value == mode;
+    return DSCard(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
+      borderColor: selected ? colors.primary : null,
+      onTap: () async {
+        await ThemeModeController.instance.set(mode);
+        if (context.mounted) Navigator.of(context).pop();
+      },
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 20,
+            color: selected ? colors.primary : colors.mutedForeground,
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(
+              label,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: selected ? colors.primary : colors.foreground,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ),
+          if (selected) Icon(DSIcons.check, size: 20, color: colors.primary),
         ],
       ),
     );
@@ -104,13 +222,26 @@ class _Header extends StatelessWidget {
 }
 
 class _IdentityCard extends StatelessWidget {
-  const _IdentityCard();
+  const _IdentityCard({required this.userId});
+
+  final String userId;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
     return DSCard(
       padding: const EdgeInsets.all(AppSpacing.xl),
+      onTap: () {
+        final levelBloc = context.read<LevelBloc>();
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => BlocProvider.value(
+              value: levelBloc,
+              child: LevelPage(userId: userId),
+            ),
+          ),
+        );
+      },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

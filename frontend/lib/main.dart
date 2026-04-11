@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'core/design_system/design_system.dart';
+import 'core/theme/theme_mode_controller.dart';
 import 'features/gamification/presentation/pages/achievements_page.dart';
 import 'features/gamification/presentation/pages/stats_page.dart';
 import 'features/groups/presentation/pages/groups_page.dart';
@@ -14,6 +15,8 @@ void main() async {
 
   await Hive.initFlutter();
 
+  await ThemeModeController.init();
+
   await di.init();
 
   runApp(const HabitlyApp());
@@ -24,13 +27,16 @@ class HabitlyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Habitly',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.system,
-      home: const _MainShell(),
+    return ListenableBuilder(
+      listenable: ThemeModeController.instance,
+      builder: (context, _) => MaterialApp(
+        title: 'Habitly',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
+        themeMode: ThemeModeController.instance.value,
+        home: const _MainShell(),
+      ),
     );
   }
 }
