@@ -2,3 +2,4 @@
 **/frontend/macos
 **/frontend/web
 *.iml
+.idea
