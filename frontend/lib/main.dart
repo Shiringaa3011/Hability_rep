@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+import 'core/design_system/design_system.dart';
 import 'features/gamification/presentation/pages/stats_hub_page.dart';
 import 'features/groups/presentation/pages/groups_page.dart';
 import 'features/home/presentation/pages/home_page.dart';
@@ -25,10 +26,9 @@ class HabitlyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Habitly',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6C63FF)),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: ThemeMode.system,
       home: const _MainShell(),
     );
   }

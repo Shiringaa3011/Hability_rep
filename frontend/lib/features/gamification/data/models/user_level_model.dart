@@ -6,7 +6,7 @@ part 'user_level_model.freezed.dart';
 part 'user_level_model.g.dart';
 
 @freezed
-class UserLevelModel with _$UserLevelModel {
+abstract class UserLevelModel with _$UserLevelModel {
   const factory UserLevelModel({
     @JsonKey(name: 'user_id') required String userId,
     required int level,
