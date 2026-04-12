@@ -38,6 +38,7 @@ import 'features/home/domain/usecases/upsert_habit_definition.dart';
 
 import 'features/notifications/data/repositories/notifications_repository_impl.dart';
 import 'features/notifications/domain/repositories/notifications_repository.dart';
+import 'features/notifications/domain/usecases/bootstrap_notification_pipeline.dart';
 import 'features/notifications/domain/usecases/get_notification_history.dart';
 import 'features/notifications/domain/usecases/get_notification_settings.dart';
 import 'features/notifications/domain/usecases/mark_notification_read.dart';
@@ -70,6 +71,7 @@ Future<void> init() async {
 
   sl.registerLazySingleton(() => GetNotificationHistory(sl()));
   sl.registerLazySingleton(() => MarkNotificationRead(sl()));
+  sl.registerLazySingleton(() => BootstrapNotificationPipeline(sl()));
   sl.registerLazySingleton(() => GetNotificationSettings(sl()));
   sl.registerLazySingleton(() => SaveNotificationSettings(sl()));
 

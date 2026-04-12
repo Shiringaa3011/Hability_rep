@@ -23,6 +23,7 @@ class NotificationHistoryPage extends StatelessWidget {
     final body = BlocProvider(
       create: (_) => NotificationHistoryBloc(
         userId: userId,
+        bootstrapPipeline: di.sl(),
         getHistory: di.sl(),
         markRead: di.sl(),
       )..add(NotificationHistoryLoad(userId)),

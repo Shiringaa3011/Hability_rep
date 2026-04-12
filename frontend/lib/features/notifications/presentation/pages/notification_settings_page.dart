@@ -15,6 +15,7 @@ class NotificationSettingsPage extends StatelessWidget {
     return BlocProvider(
       create: (_) => NotificationSettingsCubit(
         userId: userId,
+        bootstrapPipeline: di.sl(),
         getSettings: di.sl(),
         saveSettings: di.sl(),
       )..load(),
