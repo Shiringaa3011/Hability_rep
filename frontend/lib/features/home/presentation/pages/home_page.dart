@@ -1,21 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../gamification/presentation/bloc/stats/stats_bloc.dart';
-import '../../../gamification/presentation/pages/stats_page.dart';
+import '../../../../core/design_system/design_system.dart';
+import '../../../../injection_container.dart' as di;
 import '../../../habits/presentation/pages/create_habit_page.dart';
 import '../../../habits/presentation/pages/edit_habit_page.dart';
-import '../../../profile/presentation/pages/profile_page.dart';
 import '../../domain/entities/today_habit_entity.dart';
-import '../../../../injection_container.dart' as di;
+import '../../domain/repositories/home_repository.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
 
 class HomePage extends StatelessWidget {
-  final String userId;
-
   const HomePage({required this.userId, super.key});
+
+  final String userId;
 
   @override
   Widget build(BuildContext context) {
@@ -26,80 +25,35 @@ class HomePage extends StatelessWidget {
         getGroupOptions: di.sl(),
         toggle: di.sl(),
       )..add(HomeLoadRequested(userId)),
-      child: _HomeScaffold(userId: userId),
+      child: _HabitsScaffold(userId: userId),
     );
   }
 }
 
-class _HomeScaffold extends StatelessWidget {
+class _HabitsScaffold extends StatelessWidget {
+  const _HabitsScaffold({required this.userId});
+
   final String userId;
 
-  const _HomeScaffold({required this.userId});
-
   static const List<String> _monthsRu = [
-    'январь',
-    'февраль',
-    'март',
-    'апрель',
-    'май',
-    'июнь',
-    'июль',
-    'август',
-    'сентябрь',
-    'октябрь',
-    'ноябрь',
-    'декабрь',
+    'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
+    'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь',
   ];
 
-  static String _monthYearRu(DateTime d) => '${_monthsRu[d.month - 1]} ${d.year}';
+  static const List<String> _weekdaysFullRu = [
+    'понедельник', 'вторник', 'среда', 'четверг',
+    'пятница', 'суббота', 'воскресенье',
+  ];
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Мои привычки'),
-        actions: [
-          IconButton(
-            tooltip: 'Профиль',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => ProfilePage(userId: userId),
-                ),
-              );
-            },
-            icon: const Icon(Icons.person_outline),
-          ),
-          IconButton(
-            tooltip: 'Статистика привычек',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => BlocProvider(
-                    create: (_) => di.sl<StatsBloc>(),
-                    child: StatsPage(userId: userId),
-                  ),
-                ),
-              );
-            },
-            icon: const Icon(Icons.bar_chart),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final created = await Navigator.of(context).push<bool>(
-            MaterialPageRoute<bool>(
-              builder: (_) => CreateHabitPage(userId: userId),
-            ),
-          );
-          if (!context.mounted) return;
-          if (created == true) {
-            context.read<HomeBloc>().add(HomeLoadRequested(userId));
-          }
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Привычка'),
+      backgroundColor: colors.background,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _onAddPressed(context),
+        child: const Icon(DSIcons.add),
       ),
       body: BlocBuilder<HomeBloc, HomeState>(
         builder: (context, state) {
@@ -114,36 +68,43 @@ class _HomeScaffold extends StatelessWidget {
               context.read<HomeBloc>().add(HomeLoadRequested(userId));
             },
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.xl,
+                AppSpacing.xxl,
+                AppSpacing.xl,
+                AppSpacing.xxl + 64,
+              ),
               children: [
-                Text(
-                  _HomeScaffold._monthYearRu(state.selectedDay),
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                _DateStrip(
+                _Header(day: state.selectedDay),
+                const SizedBox(height: AppSpacing.lg),
+                DSDateStrip(
                   selected: state.selectedDay,
                   onSelect: (d) =>
                       context.read<HomeBloc>().add(HomeDateSelected(d)),
                 ),
-                const SizedBox(height: 12),
-                _GroupDropdown(state: state),
-                const SizedBox(height: 16),
-                Text(
-                  'На ${_formatDate(state.selectedDay)}',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.xl),
+                if (state.groupOptions.isNotEmpty) ...[
+                  _GroupChips(state: state),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
+                _ProgressSummary(habits: state.habits),
+                const SizedBox(height: AppSpacing.xl),
                 if (state.habits.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Text('Нет привычек на этот день'),
+                  Padding(
+                    padding: const EdgeInsets.all(AppSpacing.xl),
+                    child: Text(
+                      'Нет привычек на этот день',
+                      style: AppTextStyles.bodyMedium
+                          .copyWith(color: colors.mutedForeground),
+                      textAlign: TextAlign.center,
+                    ),
                   )
                 else
                   ...state.habits.map(
-                    (h) => _HabitCard(habit: h, userId: userId),
+                    (h) => Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: _HabitTile(habit: h, userId: userId),
+                    ),
                   ),
               ],
             ),
@@ -153,164 +114,206 @@ class _HomeScaffold extends StatelessWidget {
     );
   }
 
-  static String _formatDate(DateTime d) =>
-      '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
+  Future<void> _onAddPressed(BuildContext context) async {
+    final created = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => CreateHabitPage(userId: userId),
+      ),
+    );
+    if (!context.mounted) return;
+    if (created == true) {
+      context.read<HomeBloc>().add(HomeLoadRequested(userId));
+    }
+  }
+
+  static String monthLabel(DateTime d) => _monthsRu[d.month - 1];
+  static String weekdayLabel(DateTime d) => _weekdaysFullRu[d.weekday - 1];
 }
 
-class _HabitCard extends StatelessWidget {
-  final TodayHabitEntity habit;
-  final String userId;
+class _Header extends StatelessWidget {
+  const _Header({required this.day});
 
-  const _HabitCard({required this.habit, required this.userId});
+  final DateTime day;
 
   @override
   Widget build(BuildContext context) {
-    final dimmed = habit.completedToday;
-    return Opacity(
-      opacity: dimmed ? 0.55 : 1,
-      child: Card(
-        margin: const EdgeInsets.only(bottom: 10),
-        child: ListTile(
-          leading: Checkbox(
-            value: habit.completedToday,
-            onChanged: (v) {
-              if (v == null) return;
+    final colors = context.appColors;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _HabitsScaffold.monthLabel(day).toUpperCase(),
+          style: AppTextStyles.overline.copyWith(color: colors.mutedForeground),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '${_HabitsScaffold.weekdayLabel(day)}, ${day.day}',
+          style: AppTextStyles.bodySmall.copyWith(color: colors.mutedForeground),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProgressSummary extends StatelessWidget {
+  const _ProgressSummary({required this.habits});
+
+  final List<TodayHabitEntity> habits;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final total = habits.length;
+    if (total == 0) return const SizedBox.shrink();
+
+    final completed = habits.where((h) => h.completedToday).length;
+    final percent = (completed / total * 100).round();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '$completed из $total',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: colors.foreground,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            Text(
+              '$percent%',
+              style: AppTextStyles.bodySmall.copyWith(color: colors.mutedForeground),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        DSProgressBar(value: completed / total),
+      ],
+    );
+  }
+}
+
+class _HabitTile extends StatelessWidget {
+  const _HabitTile({required this.habit, required this.userId});
+
+  final TodayHabitEntity habit;
+  final String userId;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final muted = colors.mutedForeground;
+    final fg = colors.foreground;
+
+    return DSCard(
+      highlighted: habit.completedToday,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
+      onTap: () => _onEdit(context),
+      child: Row(
+        children: [
+          DSCheckCircle(
+            checked: habit.completedToday,
+            onTap: () {
               context.read<HomeBloc>().add(
                     HomeHabitToggled(
                       habitId: habit.id,
-                      completed: v,
+                      completed: !habit.completedToday,
                     ),
                   );
             },
           ),
-          title: Text(habit.title),
-          subtitle: habitSubtitleFor(habit),
-          trailing: IconButton(
-            tooltip: 'Изменить',
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () async {
-              final changed = await Navigator.of(context).push<bool>(
-                MaterialPageRoute<bool>(
-                  builder: (_) =>
-                      EditHabitPage(userId: userId, habitId: habit.id),
+          const SizedBox(width: AppSpacing.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  habit.title,
+                  style: AppTextStyles.titleSmall.copyWith(
+                    color: habit.completedToday ? muted : fg,
+                    decoration: habit.completedToday
+                        ? TextDecoration.lineThrough
+                        : null,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              );
-              if (!context.mounted) return;
-              if (changed == true) {
-                context.read<HomeBloc>().add(HomeLoadRequested(userId));
-              }
-            },
+                if (_subtitle(habit) != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    _subtitle(habit)!,
+                    style: AppTextStyles.caption.copyWith(color: muted),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
+
+  Future<void> _onEdit(BuildContext context) async {
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => EditHabitPage(userId: userId, habitId: habit.id),
+      ),
+    );
+    if (!context.mounted) return;
+    if (changed == true) {
+      context.read<HomeBloc>().add(HomeLoadRequested(userId));
+    }
+  }
+
+  static String? _subtitle(TodayHabitEntity h) {
+    if (h.description != null && h.description!.isNotEmpty) return h.description;
+    final parts = <String>[
+      if (h.scheduledTimeLabel != null) h.scheduledTimeLabel!,
+      if (h.frequencyLabel != null) h.frequencyLabel!,
+      if (h.groupName != null) h.groupName!,
+    ];
+    if (parts.isEmpty) return null;
+    return parts.join(' · ');
+  }
 }
 
-Widget? habitSubtitleFor(TodayHabitEntity h) {
-  final parts = <String>[
-    if (h.scheduledTimeLabel != null) 'Время: ${h.scheduledTimeLabel}',
-    if (h.frequencyLabel != null) h.frequencyLabel!,
-    if (h.groupName != null) 'Группа: ${h.groupName}',
-  ];
-  if (parts.isEmpty) return null;
-  return Text(parts.join(' · '));
-}
+class _GroupChips extends StatelessWidget {
+  const _GroupChips({required this.state});
 
-class _GroupDropdown extends StatelessWidget {
   final HomeState state;
 
-  const _GroupDropdown({required this.state});
-
   @override
   Widget build(BuildContext context) {
-    if (state.groupOptions.isEmpty) return const SizedBox.shrink();
-    return InputDecorator(
-      decoration: const InputDecoration(
-        labelText: 'Группа',
-        border: OutlineInputBorder(),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String?>(
-          isExpanded: true,
-          value: state.selectedGroupId,
-          items: state.groupOptions
-              .map(
-                (o) => DropdownMenuItem<String?>(
-                  value: o.groupId,
-                  child: Text(o.title),
-                ),
-              )
-              .toList(),
-          onChanged: (gid) {
-            context.read<HomeBloc>().add(HomeGroupFilterSelected(gid));
-          },
-        ),
-      ),
-    );
-  }
-}
+    final all = <HomeGroupFilterOption>[
+      const HomeGroupFilterOption(groupId: null, title: 'Все'),
+      ...state.groupOptions.where((o) => o.groupId != null),
+    ];
 
-class _DateStrip extends StatelessWidget {
-  final DateTime selected;
-  final ValueChanged<DateTime> onSelect;
-
-  const _DateStrip({
-    required this.selected,
-    required this.onSelect,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final base = DateTime(selected.year, selected.month, selected.day);
-    final start = base.subtract(const Duration(days: 3));
-    return SizedBox(
-      height: 84,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: 14,
-        itemBuilder: (context, i) {
-          final day = start.add(Duration(days: i));
-          final isSel =
-              day.year == selected.year &&
-              day.month == selected.month &&
-              day.day == selected.day;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: InkWell(
-              onTap: () => onSelect(day),
-              borderRadius: BorderRadius.circular(12),
-              child: Ink(
-                width: 56,
-                decoration: BoxDecoration(
-                  color: isSel
-                      ? Theme.of(context).colorScheme.primaryContainer
-                      : Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      _weekdayRu(day.weekday),
-                      style: Theme.of(context).textTheme.labelSmall,
-                    ),
-                    Text(
-                      '${day.day}',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ],
-                ),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final opt in all)
+            Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.sm),
+              child: DSChip(
+                label: opt.title,
+                selected: opt.groupId == state.selectedGroupId,
+                onTap: () => context
+                    .read<HomeBloc>()
+                    .add(HomeGroupFilterSelected(opt.groupId)),
               ),
             ),
-          );
-        },
+        ],
       ),
     );
-  }
-
-  static String _weekdayRu(int w) {
-    const names = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-    return names[(w - 1) % 7];
   }
 }

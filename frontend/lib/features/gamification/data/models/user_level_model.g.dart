@@ -6,8 +6,8 @@ part of 'user_level_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$UserLevelModelImpl _$$UserLevelModelImplFromJson(Map<String, dynamic> json) =>
-    _$UserLevelModelImpl(
+_UserLevelModel _$UserLevelModelFromJson(Map<String, dynamic> json) =>
+    _UserLevelModel(
       userId: json['user_id'] as String,
       level: (json['level'] as num).toInt(),
       totalPoints: (json['total_points'] as num).toInt(),
@@ -15,8 +15,7 @@ _$UserLevelModelImpl _$$UserLevelModelImplFromJson(Map<String, dynamic> json) =>
       progressPercent: (json['progress_percent'] as num).toDouble(),
     );
 
-Map<String, dynamic> _$$UserLevelModelImplToJson(
-        _$UserLevelModelImpl instance) =>
+Map<String, dynamic> _$UserLevelModelToJson(_UserLevelModel instance) =>
     <String, dynamic>{
       'user_id': instance.userId,
       'level': instance.level,

@@ -6,7 +6,7 @@ part 'achievement_model.freezed.dart';
 part 'achievement_model.g.dart';
 
 @freezed
-class AchievementModel with _$AchievementModel {
+abstract class AchievementModel with _$AchievementModel {
   const factory AchievementModel({
     required String id,
     required String name,
