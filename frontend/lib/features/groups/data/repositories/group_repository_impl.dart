@@ -1,119 +1,80 @@
+import 'package:dio/dio.dart';
+
+import '../../../../core/constants/api_constants.dart';
 import '../../domain/entities/group_entity.dart';
 import '../../domain/entities/group_member_entity.dart';
 import '../../domain/repositories/group_repository.dart';
 
-// заменить на Dio + DTO + маппинг, когда будет готов backend.
 class GroupRepositoryImpl implements GroupRepository {
-  final List<GroupEntity> _mockGroups = [
-    GroupEntity(
-      id: '1',
-      name: 'Семья',
-      description: 'Наши семейные привычки',
-      createdBy: '00000000-0000-0000-0000-000000000001',
-      createdAt: DateTime(2025, 11, 1),
-    ),
-    GroupEntity(
-      id: '2',
-      name: 'Друзья',
-      description: 'Вместе к здоровью',
-      createdBy: 'user_2',
-      createdAt: DateTime(2025, 11, 10),
-    ),
-  ];
+  GroupRepositoryImpl({required this.dio});
 
-  //mock
-  final Map<String, List<GroupMemberEntity>> _mockMembers = {
-    '1': [
-      GroupMemberEntity(
-        id: 'm1',
-        userId: '00000000-0000-0000-0000-000000000001',
-        username: 'Вы',
-        points: 450,
-        reactions: 3,
-        joinedAt: DateTime(2025, 11, 2),
-      ),
-      GroupMemberEntity(
-        id: 'm2',
-        userId: 'user_2',
-        username: 'Пётр',
-        points: 320,
-        reactions: 0,
-        joinedAt: DateTime(2025, 11, 3),
-      ),
-      GroupMemberEntity(
-        id: 'm3',
-        userId: 'user_3',
-        username: 'Мария',
-        points: 280,
-        reactions: 0,
-        joinedAt: DateTime(2025, 11, 4),
-      ),
-    ],
-    '2': [
-      GroupMemberEntity(
-        id: 'm4',
-        userId: '00000000-0000-0000-0000-000000000001',
-        username: 'Вы',
-        points: 120,
-        reactions: 0,
-        joinedAt: DateTime(2025, 11, 11),
-      ),
-      GroupMemberEntity(
-        id: 'm5',
-        userId: 'user_2',
-        username: 'Пётр',
-        points: 380,
-        reactions: 5,
-        joinedAt: DateTime(2025, 11, 11),
-      ),
-    ],
-  };
-
-  final Map<String, List<String>> _achievementsByGroup = {
-    '1': ['Серия 7 дней', 'Командная цель: вода'],
-    '2': ['Первый общий квест', 'Топ недели'],
-  };
+  final Dio dio;
 
   @override
   Future<List<GroupEntity>> getUserGroups(String userId) async {
-    // mock: GET /users/{id}/groups
-    await Future<void>.delayed(const Duration(milliseconds: 400));
-    return _mockGroups.where((g) {
-      final members = _mockMembers[g.id] ?? [];
-      return members.any((m) => m.userId == userId);
+    final response = await dio.get('${ApiConstants.groupsPath}/user/$userId');
+    final rows = response.data as List<dynamic>;
+    return rows.map((e) {
+      final m = e as Map<String, dynamic>;
+      return GroupEntity(
+        id: m['id'] as String,
+        name: m['name'] as String,
+        description: m['description'] as String?,
+        createdBy: m['created_by'] as String,
+        createdAt: DateTime.parse(m['created_at'] as String),
+        isActive: m['is_active'] as bool? ?? true,
+      );
     }).toList();
   }
 
   @override
   Future<GroupDetail> getGroupDetails(String groupId, String currentUserId) async {
-    // mock: GET /groups/{id}
-    await Future<void>.delayed(const Duration(milliseconds: 350));
-    final group = _mockGroups.firstWhere((g) => g.id == groupId);
-    final members = List<GroupMemberEntity>.from(_mockMembers[groupId] ?? [])
+    final response = await dio.get(
+      '${ApiConstants.groupsPath}/$groupId',
+      queryParameters: {'current_user_id': currentUserId},
+    );
+    final data = response.data as Map<String, dynamic>;
+    final groupData = data['group'] as Map<String, dynamic>;
+    final group = GroupEntity(
+      id: groupData['id'] as String,
+      name: groupData['name'] as String,
+      description: groupData['description'] as String?,
+      createdBy: groupData['created_by'] as String,
+      createdAt: DateTime.parse(groupData['created_at'] as String),
+      isActive: groupData['is_active'] as bool? ?? true,
+    );
+    final members = (data['members'] as List<dynamic>).map((raw) {
+      final m = raw as Map<String, dynamic>;
+      return GroupMemberEntity(
+        id: m['id'] as String,
+        userId: m['user_id'] as String,
+        username: m['username'] as String,
+        points: m['points'] as int? ?? 0,
+        reactions: m['reactions'] as int? ?? 0,
+        joinedAt: DateTime.parse(m['joined_at'] as String),
+      );
+    }).toList()
       ..sort((a, b) => b.points.compareTo(a.points));
     return GroupDetail(
       group: group,
       members: members,
-      groupAchievements: List<String>.from(_achievementsByGroup[groupId] ?? const []),
+      groupAchievements: (data['group_achievements'] as List<dynamic>? ?? const [])
+          .map((e) => e.toString())
+          .toList(),
     );
   }
 
   @override
   Future<void> leaveGroup(String groupId, String userId) async {
-    // mock: POST /groups/{id}/leave
-    await Future<void>.delayed(const Duration(milliseconds: 250));
-    final list = _mockMembers[groupId];
-    if (list == null) return;
-    list.removeWhere((m) => m.userId == userId);
+    await dio.post(
+      '${ApiConstants.groupsPath}/$groupId/leave',
+      queryParameters: {'user_id': userId},
+    );
   }
 
   @override
   Future<void> removeMember(String groupId, String memberId) async {
-    // mock: DELETE /groups/{id}/members/{memberId}
-    await Future<void>.delayed(const Duration(milliseconds: 250));
-    final list = _mockMembers[groupId];
-    if (list == null) return;
-    list.removeWhere((m) => m.id == memberId || m.userId == memberId);
+    await dio.delete('${ApiConstants.groupsPath}/$groupId/members/$memberId');
   }
 
   @override
@@ -122,24 +83,12 @@ class GroupRepositoryImpl implements GroupRepository {
     String fromUserId,
     String toUserId,
   ) async {
-    // mock: POST /groups/{id}/reactions
-    await Future<void>.delayed(const Duration(milliseconds: 200));
-    final list = _mockMembers[groupId];
-    if (list == null || list.isEmpty) return;
-    final sorted = List<GroupMemberEntity>.from(list)
-      ..sort((a, b) => b.points.compareTo(a.points));
-    final leader = sorted.first;
-    if (leader.userId != toUserId) return;
-    final idx = list.indexWhere((m) => m.userId == toUserId);
-    if (idx == -1) return;
-    final m = list[idx];
-    list[idx] = GroupMemberEntity(
-      id: m.id,
-      userId: m.userId,
-      username: m.username,
-      points: m.points,
-      reactions: m.reactions + 1,
-      joinedAt: m.joinedAt,
+    await dio.post(
+      '${ApiConstants.groupsPath}/$groupId/reaction',
+      queryParameters: {
+        'from_user_id': fromUserId,
+        'to_user_id': toUserId,
+      },
     );
   }
 
@@ -149,29 +98,72 @@ class GroupRepositoryImpl implements GroupRepository {
     required String name,
     String? description,
   }) async {
-    // mock: POST /groups
-    await Future<void>.delayed(const Duration(milliseconds: 350));
-    final id = 'g_${DateTime.now().millisecondsSinceEpoch}';
-    final trimmedDesc = description?.trim();
-    final entity = GroupEntity(
-      id: id,
-      name: name.trim(),
-      description: (trimmedDesc == null || trimmedDesc.isEmpty) ? null : trimmedDesc,
-      createdBy: creatorUserId,
-      createdAt: DateTime.now(),
+    final response = await dio.post(
+      ApiConstants.groupsPath,
+      data: {
+        'user_id': creatorUserId,
+        'name': name,
+        'description': description,
+      },
     );
-    _mockGroups.add(entity);
-    _mockMembers[id] = [
-      GroupMemberEntity(
-        id: 'mem_${id}_creator',
-        userId: creatorUserId,
-        username: 'Вы',
-        points: 0,
-        reactions: 0,
-        joinedAt: DateTime.now(),
-      ),
-    ];
-    _achievementsByGroup[id] = [];
-    return entity;
+    final m = response.data as Map<String, dynamic>;
+    return GroupEntity(
+      id: m['id'] as String,
+      name: m['name'] as String,
+      description: m['description'] as String?,
+      createdBy: m['created_by'] as String,
+      createdAt: DateTime.parse(m['created_at'] as String),
+      isActive: m['is_active'] as bool? ?? true,
+    );
+  }
+
+  @override
+  Future<void> inviteUser({
+    required String groupId,
+    required String fromUserId,
+    required String toUsername,
+  }) async {
+    await dio.post(
+      '${ApiConstants.groupsPath}/invites',
+      data: {
+        'group_id': groupId,
+        'from_user_id': fromUserId,
+        'to_username': toUsername,
+      },
+    );
+  }
+
+  @override
+  Future<List<GroupInviteEntity>> getPendingInvites(String userId) async {
+    final response = await dio.get('${ApiConstants.groupsPath}/invites/pending/$userId');
+    final rows = response.data as List<dynamic>;
+    return rows.map((raw) {
+      final m = raw as Map<String, dynamic>;
+      return GroupInviteEntity(
+        id: m['id'] as String,
+        groupId: m['group_id'] as String,
+        groupName: m['group_name'] as String,
+        fromUserId: m['from_user_id'] as String,
+        fromUsername: m['from_username'] as String,
+        toUserId: m['to_user_id'] as String,
+        status: m['status'] as String,
+        createdAt: DateTime.parse(m['created_at'] as String),
+      );
+    }).toList();
+  }
+
+  @override
+  Future<void> decideInvite({
+    required String inviteId,
+    required String userId,
+    required bool accept,
+  }) async {
+    await dio.post(
+      '${ApiConstants.groupsPath}/invites/$inviteId/decision',
+      data: {
+        'user_id': userId,
+        'accept': accept,
+      },
+    );
   }
 }

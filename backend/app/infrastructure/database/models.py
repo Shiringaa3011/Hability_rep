@@ -11,6 +11,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    Time,
     TypeDecorator,
     UniqueConstraint,
 )
@@ -62,6 +63,7 @@ class UserModel(Base):
     id = Column(GUID, primary_key=True, default=uuid.uuid4)
     username = Column(String(100), unique=True, nullable=False, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
+    password_hash = Column(String(255), nullable=False, default="")
     total_points = Column(Integer, nullable=False, default=0)
     current_level = Column(Integer, nullable=False, default=0)
     created_at = Column(
@@ -109,11 +111,20 @@ class HabitModel(Base):
     )
     name = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
+    group_id = Column(
+        GUID,
+        ForeignKey("groups.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    scheduled_time = Column(Time, nullable=True)
     frequency = Column(  # type: ignore[var-annotated]
         SQLEnum(HabitFrequency, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         default=HabitFrequency.DAILY,
     )
+    reminder_enabled = Column(Boolean, nullable=False, default=False)
+    reminder_time = Column(Time, nullable=True)
     difficulty = Column(Integer, nullable=False)  # 1-5
     target_days = Column(Integer, nullable=False, default=30)
     is_active = Column(Boolean, nullable=False, default=True)
@@ -242,6 +253,7 @@ class GroupModel(Base):
     created_at = Column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+    is_active = Column(Boolean, nullable=False, default=True)
 
     creator = relationship("UserModel", back_populates="created_groups")
     members = relationship(
@@ -281,6 +293,94 @@ class GroupMemberModel(Base):
 
     def __repr__(self):
         return f"<GroupMember(id={self.id}, group_id={self.group_id}, user_id={self.user_id})>"
+
+
+class GroupInviteModel(Base):
+    __tablename__ = "group_invites"
+
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    group_id = Column(
+        GUID,
+        ForeignKey("groups.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    from_user_id = Column(
+        GUID,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    to_user_id = Column(
+        GUID,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    status = Column(String(20), nullable=False, default="pending", index=True)
+    created_at = Column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    __table_args__ = (
+        Index("ix_group_invites_group_to_status", "group_id", "to_user_id", "status"),
+    )
+
+
+class UserNotificationSettingsModel(Base):
+    __tablename__ = "user_notification_settings"
+
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    user_id = Column(
+        GUID,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+    allow_notifications = Column(Boolean, nullable=False, default=True)
+    sound_enabled = Column(Boolean, nullable=False, default=True)
+    vibration_enabled = Column(Boolean, nullable=False, default=True)
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+
+class NotificationModel(Base):
+    __tablename__ = "notifications"
+
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    user_id = Column(
+        GUID,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    title = Column(String(40), nullable=False)
+    body = Column(String(120), nullable=False)
+    read = Column(Boolean, nullable=False, default=False)
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        index=True,
+    )
+    kind = Column(String(30), nullable=False, default="info")
+    group_id = Column(
+        GUID,
+        ForeignKey("groups.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
 
 class UserStatsModel(Base):

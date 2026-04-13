@@ -8,6 +8,7 @@ import '../../../gamification/presentation/bloc/achievements/achievements_bloc.d
 import '../../../gamification/presentation/bloc/level/level_bloc.dart';
 import '../../../gamification/presentation/bloc/stats/stats_bloc.dart';
 import '../../../groups/presentation/pages/groups_page.dart';
+import '../../../groups/domain/repositories/group_repository.dart';
 import '../../../notifications/presentation/pages/notification_history_page.dart';
 import '../../../../injection_container.dart' as di;
 
@@ -140,7 +141,100 @@ class _ProfileSections extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(height: 16),
+        Text(
+          'Приглашения в группы',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        _PendingInvitesSection(userId: userId),
       ],
+    );
+  }
+}
+
+class _PendingInvitesSection extends StatefulWidget {
+  final String userId;
+
+  const _PendingInvitesSection({required this.userId});
+
+  @override
+  State<_PendingInvitesSection> createState() => _PendingInvitesSectionState();
+}
+
+class _PendingInvitesSectionState extends State<_PendingInvitesSection> {
+  late Future<List<GroupInviteEntity>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = di.sl<GroupRepository>().getPendingInvites(widget.userId);
+  }
+
+  Future<void> _refresh() async {
+    setState(() {
+      _future = di.sl<GroupRepository>().getPendingInvites(widget.userId);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<GroupInviteEntity>>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.all(12),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasError) {
+          return Text('Ошибка загрузки инвайтов: ${snapshot.error}');
+        }
+        final invites = snapshot.data ?? const [];
+        if (invites.isEmpty) {
+          return const Text('Нет активных приглашений');
+        }
+        return Column(
+          children: invites.map((inv) {
+            return Card(
+              child: ListTile(
+                title: Text(inv.groupName),
+                subtitle: Text('Пригласил: ${inv.fromUsername}'),
+                trailing: Wrap(
+                  spacing: 8,
+                  children: [
+                    IconButton(
+                      tooltip: 'Принять',
+                      icon: const Icon(Icons.check_circle_outline),
+                      onPressed: () async {
+                        await di.sl<GroupRepository>().decideInvite(
+                              inviteId: inv.id,
+                              userId: widget.userId,
+                              accept: true,
+                            );
+                        await _refresh();
+                      },
+                    ),
+                    IconButton(
+                      tooltip: 'Отклонить',
+                      icon: const Icon(Icons.cancel_outlined),
+                      onPressed: () async {
+                        await di.sl<GroupRepository>().decideInvite(
+                              inviteId: inv.id,
+                              userId: widget.userId,
+                              accept: false,
+                            );
+                        await _refresh();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      },
     );
   }
 }

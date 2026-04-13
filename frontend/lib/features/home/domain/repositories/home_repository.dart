@@ -24,5 +24,5 @@ abstract class HomeRepository {
 
   Future<TodayHabitEntity?> getHabitById(String habitId);
 
-  Future<void> upsertHabitDefinition(TodayHabitEntity habit);
+  Future<void> upsertHabitDefinition(String userId, TodayHabitEntity habit);
 }

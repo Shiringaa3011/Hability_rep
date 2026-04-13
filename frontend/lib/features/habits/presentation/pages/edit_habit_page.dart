@@ -110,7 +110,7 @@ class _EditHabitPageState extends State<EditHabitPage> {
       remindersEnabled: _reminders,
       reminderTimeLabel: _reminders ? _fmt(_reminderTime) : null,
     );
-    await di.sl<UpsertHabitDefinition>()(habit);
+    await di.sl<UpsertHabitDefinition>()(widget.userId, habit);
     if (!mounted) return;
     Navigator.of(context).pop(true);
   }

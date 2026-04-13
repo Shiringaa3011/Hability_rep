@@ -144,6 +144,14 @@ class _GroupDetailView extends StatelessWidget {
                             );
                           }),
                           const SizedBox(height: 12),
+                          if (state.isOwner) ...[
+                            OutlinedButton.icon(
+                              onPressed: () => _showInviteDialog(context, state),
+                              icon: const Icon(Icons.person_add_alt_1),
+                              label: const Text('Пригласить в группу'),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
                           if (state.leader != null &&
                               state.leader!.userId != state.currentUserId)
                             ReactionToLeaderButton(
@@ -176,6 +184,55 @@ class _GroupDetailView extends StatelessWidget {
       },
     );
   }
+}
+
+Future<void> _showInviteDialog(BuildContext context, GroupDetailState state) async {
+  final c = TextEditingController();
+  await showDialog<void>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Пригласить пользователя'),
+      content: TextField(
+        controller: c,
+        decoration: const InputDecoration(
+          hintText: 'username',
+          border: OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: const Text('Отмена'),
+        ),
+        FilledButton(
+          onPressed: () async {
+            final username = c.text.trim();
+            if (username.isEmpty) return;
+            try {
+              await di.sl<GroupRepository>().inviteUser(
+                    groupId: state.groupId,
+                    fromUserId: state.currentUserId,
+                    toUsername: username,
+                  );
+              if (ctx.mounted) {
+                Navigator.of(ctx).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Приглашение отправлено')),
+                );
+              }
+            } catch (e) {
+              if (ctx.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Ошибка: $e')),
+                );
+              }
+            }
+          },
+          child: const Text('Отправить'),
+        ),
+      ],
+    ),
+  );
 }
 
 class _SummaryCard extends StatelessWidget {

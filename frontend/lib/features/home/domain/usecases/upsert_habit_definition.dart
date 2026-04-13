@@ -6,6 +6,6 @@ class UpsertHabitDefinition {
 
   UpsertHabitDefinition(this._repository);
 
-  Future<void> call(TodayHabitEntity habit) =>
-      _repository.upsertHabitDefinition(habit);
+  Future<void> call(String userId, TodayHabitEntity habit) =>
+      _repository.upsertHabitDefinition(userId, habit);
 }

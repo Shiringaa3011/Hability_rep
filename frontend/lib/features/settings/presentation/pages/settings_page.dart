@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../auth/presentation/pages/register_page.dart';
 import '../../../notifications/presentation/pages/notification_settings_page.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 
@@ -53,6 +54,19 @@ class SettingsPage extends StatelessWidget {
                     userId: userId,
                     initialTab: 1,
                   ),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.app_registration),
+            title: const Text('Регистрация (упрощенная)'),
+            subtitle: const Text('Email + пароль'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const RegisterPage(),
                 ),
               );
             },
