@@ -6,9 +6,8 @@ part of 'habit_stats_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$HabitStatsModelImpl _$$HabitStatsModelImplFromJson(
-        Map<String, dynamic> json) =>
-    _$HabitStatsModelImpl(
+_HabitStatsModel _$HabitStatsModelFromJson(Map<String, dynamic> json) =>
+    _HabitStatsModel(
       habitId: json['habit_id'] as String,
       habitName: json['habit_name'] as String,
       totalCompletions: (json['total_completions'] as num).toInt(),
@@ -18,8 +17,7 @@ _$HabitStatsModelImpl _$$HabitStatsModelImplFromJson(
       completionRate: (json['completion_rate'] as num).toDouble(),
     );
 
-Map<String, dynamic> _$$HabitStatsModelImplToJson(
-        _$HabitStatsModelImpl instance) =>
+Map<String, dynamic> _$HabitStatsModelToJson(_HabitStatsModel instance) =>
     <String, dynamic>{
       'habit_id': instance.habitId,
       'habit_name': instance.habitName,
