@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../domain/entities/achievement.dart';
 import '../../domain/entities/user_stats.dart';
 import '../models/achievement_model.dart';
 import '../models/habit_stats_model.dart';
@@ -17,7 +18,9 @@ abstract class GamificationRemoteDataSource {
 
   Future<List<AchievementModel>> getAchievements(String userId);
 
-  Future<void> completeHabit(String habitId, String userId);
+  Future<List<NewAchievementInfo>> completeHabit(String habitId, String userId);
+
+  Future<List<Map<String, dynamic>>> getGroupAchievements(String groupId);
 }
 
 class GamificationRemoteDataSourceImpl implements GamificationRemoteDataSource {
@@ -129,7 +132,7 @@ class GamificationRemoteDataSourceImpl implements GamificationRemoteDataSource {
   }
 
   @override
-  Future<void> completeHabit(String habitId, String userId) async {
+  Future<List<NewAchievementInfo>> completeHabit(String habitId, String userId) async {
     try {
       final response = await dio.post(
         '${ApiConstants.gamificationPath}/complete-habit',
@@ -140,7 +143,19 @@ class GamificationRemoteDataSourceImpl implements GamificationRemoteDataSource {
         },
       );
 
-      if (response.statusCode != 201) {
+      if (response.statusCode == 201) {
+        final data = response.data as Map<String, dynamic>;
+        final rawList = data['new_achievements'] as List<dynamic>? ?? [];
+        return rawList.map((item) {
+          final m = item as Map<String, dynamic>;
+          return NewAchievementInfo(
+            achievementId: m['achievement_id'] as String,
+            name: m['name'] as String,
+            icon: m['icon'] as String,
+            rewardPoints: m['reward_points'] as int,
+          );
+        }).toList();
+      } else {
         throw ServerException('Failed to complete habit: ${response.statusCode}');
       }
     } on DioException catch (e) {
@@ -150,6 +165,34 @@ class GamificationRemoteDataSourceImpl implements GamificationRemoteDataSource {
       } else if (e.response?.statusCode == 400) {
         final message = e.response?.data['detail'] ?? 'Bad request';
         throw ServerException(message);
+      } else {
+        throw ServerException('Network error: ${e.message}');
+      }
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getGroupAchievements(String groupId) async {
+    try {
+      final response = await dio.get(
+        '${ApiConstants.achievementsPath}/group/$groupId/progress',
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data as Map<String, dynamic>;
+        final achievements = data['achievements'] as List<dynamic>;
+        return achievements
+            .map((a) => a as Map<String, dynamic>)
+            .toList();
+      } else {
+        throw ServerException(
+          'Failed to get group achievements: ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        throw const NetworkException('Connection timeout');
       } else {
         throw ServerException('Network error: ${e.message}');
       }

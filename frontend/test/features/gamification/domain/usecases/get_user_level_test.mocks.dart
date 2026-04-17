@@ -9,6 +9,8 @@ import 'package:dartz/dartz.dart' as _i2;
 import 'package:habitly/core/error/failures.dart' as _i5;
 import 'package:habitly/features/gamification/domain/entities/achievement.dart'
     as _i9;
+import 'package:habitly/features/gamification/domain/entities/group_achievement.dart'
+    as _i10;
 import 'package:habitly/features/gamification/domain/entities/habit_stats.dart'
     as _i8;
 import 'package:habitly/features/gamification/domain/entities/user_level.dart'
@@ -143,7 +145,8 @@ class MockGamificationRepository extends _i1.Mock
       ) as _i4.Future<_i2.Either<_i5.Failure, List<_i9.Achievement>>>);
 
   @override
-  _i4.Future<_i2.Either<_i5.Failure, void>> completeHabit(
+  _i4.Future<
+      _i2.Either<_i5.Failure, List<_i9.NewAchievementInfo>>> completeHabit(
     String? habitId,
     String? userId,
   ) =>
@@ -155,8 +158,9 @@ class MockGamificationRepository extends _i1.Mock
             userId,
           ],
         ),
-        returnValue: _i4.Future<_i2.Either<_i5.Failure, void>>.value(
-            _FakeEither_0<_i5.Failure, void>(
+        returnValue: _i4.Future<
+                _i2.Either<_i5.Failure, List<_i9.NewAchievementInfo>>>.value(
+            _FakeEither_0<_i5.Failure, List<_i9.NewAchievementInfo>>(
           this,
           Invocation.method(
             #completeHabit,
@@ -166,7 +170,26 @@ class MockGamificationRepository extends _i1.Mock
             ],
           ),
         )),
-      ) as _i4.Future<_i2.Either<_i5.Failure, void>>);
+      ) as _i4.Future<_i2.Either<_i5.Failure, List<_i9.NewAchievementInfo>>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, List<_i10.GroupAchievement>>>
+      getGroupAchievements(String? groupId) => (super.noSuchMethod(
+            Invocation.method(
+              #getGroupAchievements,
+              [groupId],
+            ),
+            returnValue: _i4.Future<
+                    _i2.Either<_i5.Failure, List<_i10.GroupAchievement>>>.value(
+                _FakeEither_0<_i5.Failure, List<_i10.GroupAchievement>>(
+              this,
+              Invocation.method(
+                #getGroupAchievements,
+                [groupId],
+              ),
+            )),
+          ) as _i4
+              .Future<_i2.Either<_i5.Failure, List<_i10.GroupAchievement>>>);
 
   @override
   _i4.Future<_i2.Either<_i5.Failure, void>> refreshData(String? userId) =>

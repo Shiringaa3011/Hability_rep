@@ -47,3 +47,16 @@ class ChangePeriod extends StatsEvent {
   @override
   List<Object?> get props => [userId, period];
 }
+
+class CompleteHabitEvent extends StatsEvent {
+  const CompleteHabitEvent({
+    required this.habitId,
+    required this.userId,
+  });
+
+  final String habitId;
+  final String userId;
+
+  @override
+  List<Object?> get props => [habitId, userId];
+}

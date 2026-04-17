@@ -8,9 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import AsyncSessionLocal
 from app.domain.models.achievement import AchievementType
+from app.domain.models.group_achievement import GroupAchievementType
 from app.domain.models.habit import HabitFrequency
 from app.infrastructure.database.models import (
     AchievementModel,
+    GroupAchievementModel,
     GroupMemberModel,
     GroupModel,
     HabitCompletionModel,
@@ -319,8 +321,9 @@ async def seed_database():
 
         # Create a group
         print("Creating groups...")
+        group1_id = uuid.UUID("00000000-0000-0000-0000-000000000010")
         group1 = GroupModel(
-            id=uuid.uuid4(),
+            id=group1_id,
             name="Morning Enthusiasts",
             description="Group for people who love morning routines",
             created_by=user1.id,
@@ -347,6 +350,65 @@ async def seed_database():
         await session.flush()
         print(f"✓ Created 1 group with 2 members")
 
+        # Create group achievements
+        print("Creating group achievements...")
+        group_achievements = [
+            GroupAchievementModel(
+                id=uuid.uuid4(),
+                name="Team First Steps",
+                description="Group completes 10 habits together",
+                icon="people",
+                achievement_type=GroupAchievementType.GROUP_TOTAL_HABITS,
+                condition_value=10,
+                reward_points=50,
+                is_active=True,
+            ),
+            GroupAchievementModel(
+                id=uuid.uuid4(),
+                name="Team Effort",
+                description="Group completes 50 habits together",
+                icon="handshake",
+                achievement_type=GroupAchievementType.GROUP_TOTAL_HABITS,
+                condition_value=50,
+                reward_points=150,
+                is_active=True,
+            ),
+            GroupAchievementModel(
+                id=uuid.uuid4(),
+                name="Synchronized Streak",
+                description="All group members maintain a 3-day streak",
+                icon="sync",
+                achievement_type=GroupAchievementType.GROUP_ALL_STREAK,
+                condition_value=3,
+                reward_points=100,
+                is_active=True,
+            ),
+            GroupAchievementModel(
+                id=uuid.uuid4(),
+                name="Team Week Warriors",
+                description="All group members maintain a 7-day streak",
+                icon="shield",
+                achievement_type=GroupAchievementType.GROUP_ALL_STREAK,
+                condition_value=7,
+                reward_points=250,
+                is_active=True,
+            ),
+            GroupAchievementModel(
+                id=uuid.uuid4(),
+                name="Perfect Team Week",
+                description="All group members complete 100% of habits in a week",
+                icon="crown_group",
+                achievement_type=GroupAchievementType.GROUP_PERFECT_WEEK,
+                condition_value=1,
+                reward_points=200,
+                is_active=True,
+            ),
+        ]
+
+        session.add_all(group_achievements)
+        await session.flush()
+        print(f"✓ Created {len(group_achievements)} group achievements")
+
         # Commit all changes
         await session.commit()
 
@@ -367,6 +429,8 @@ async def clear_database():
         print("🗑️  Clearing database...")
 
         # Order matters due to foreign keys
+        await session.execute("DELETE FROM earned_group_achievements")
+        await session.execute("DELETE FROM group_achievements")
         await session.execute("DELETE FROM user_achievements")
         await session.execute("DELETE FROM group_members")
         await session.execute("DELETE FROM groups")

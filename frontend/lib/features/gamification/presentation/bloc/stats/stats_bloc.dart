@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../domain/entities/user_stats.dart';
+import '../../../domain/usecases/complete_habit.dart';
 import '../../../domain/usecases/get_habits_stats.dart';
 import '../../../domain/usecases/get_user_stats.dart';
 import 'stats_event.dart';
@@ -10,14 +11,17 @@ class StatsBloc extends Bloc<StatsEvent, StatsState> {
   StatsBloc({
     required this.getUserStats,
     required this.getHabitsStats,
+    required this.completeHabit,
   }) : super(const StatsInitial()) {
     on<LoadStats>(_onLoadStats);
     on<RefreshStats>(_onRefreshStats);
     on<ChangePeriod>(_onChangePeriod);
+    on<CompleteHabitEvent>(_onCompleteHabit);
   }
 
   final GetUserStats getUserStats;
   final GetHabitsStats getHabitsStats;
+  final CompleteHabit completeHabit;
 
   Future<void> _onLoadStats(LoadStats event, Emitter<StatsState> emit) async {
     emit(const StatsLoading());
@@ -32,6 +36,20 @@ class StatsBloc extends Bloc<StatsEvent, StatsState> {
   Future<void> _onChangePeriod(ChangePeriod event, Emitter<StatsState> emit) async {
     emit(const StatsLoading());
     await _fetchStats(event.userId, event.period, emit);
+  }
+
+  Future<void> _onCompleteHabit(
+    CompleteHabitEvent event,
+    Emitter<StatsState> emit,
+  ) async {
+    final result = await completeHabit(
+      CompleteHabitParams(habitId: event.habitId, userId: event.userId),
+    );
+
+    result.fold(
+      (failure) => emit(HabitCompletionError(failure.message)),
+      (newAchievements) => emit(HabitCompleted(newAchievements: newAchievements)),
+    );
   }
 
   Future<void> _fetchStats(
