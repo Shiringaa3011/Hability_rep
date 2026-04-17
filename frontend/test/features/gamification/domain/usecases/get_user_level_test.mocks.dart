@@ -11,6 +11,8 @@ import 'package:habitly/features/gamification/domain/entities/achievement.dart'
     as _i9;
 import 'package:habitly/features/gamification/domain/entities/group_achievement.dart'
     as _i10;
+import 'package:habitly/features/gamification/domain/entities/group_stats.dart'
+    as _i11;
 import 'package:habitly/features/gamification/domain/entities/habit_stats.dart'
     as _i8;
 import 'package:habitly/features/gamification/domain/entities/user_level.dart'
@@ -191,6 +193,32 @@ class MockGamificationRepository extends _i1.Mock
             )),
           ) as _i4
               .Future<_i2.Either<_i5.Failure, List<_i10.GroupAchievement>>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, _i11.GroupStats>> getGroupStats(
+    String? groupId,
+    _i7.StatsPeriod? period,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getGroupStats,
+          [
+            groupId,
+            period,
+          ],
+        ),
+        returnValue: _i4.Future<_i2.Either<_i5.Failure, _i11.GroupStats>>.value(
+            _FakeEither_0<_i5.Failure, _i11.GroupStats>(
+          this,
+          Invocation.method(
+            #getGroupStats,
+            [
+              groupId,
+              period,
+            ],
+          ),
+        )),
+      ) as _i4.Future<_i2.Either<_i5.Failure, _i11.GroupStats>>);
 
   @override
   _i4.Future<_i2.Either<_i5.Failure, void>> refreshData(String? userId) =>
