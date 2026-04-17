@@ -4,6 +4,7 @@ import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/achievement.dart';
 import '../../domain/entities/group_achievement.dart';
+import '../../domain/entities/group_stats.dart';
 import '../../domain/entities/habit_stats.dart';
 import '../../domain/entities/user_level.dart';
 import '../../domain/entities/user_stats.dart';
@@ -165,6 +166,35 @@ class GamificationRepositoryImpl implements GamificationRepository {
       return Left(ServerFailure(e.message));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Unexpected error: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, GroupStats>> getGroupStats(
+    String groupId,
+    StatsPeriod period,
+  ) async {
+    try {
+      final cached = await localDataSource.getCachedGroupStats(groupId, period);
+
+      try {
+        final remote = await remoteDataSource.getGroupStats(groupId, period);
+        await localDataSource.cacheGroupStats(remote);
+        return Right(remote.toEntity());
+      } catch (e) {
+        if (cached != null) {
+          return Right(cached.toEntity());
+        }
+        rethrow;
+      }
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on CacheException catch (e) {
+      return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(ServerFailure('Unexpected error: $e'));
     }
