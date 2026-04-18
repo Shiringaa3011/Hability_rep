@@ -45,6 +45,7 @@ class HabitCreateUpdateRequest(BaseModel):
     scheduled_time: Optional[time] = None
     reminders_enabled: bool = False
     reminder_time: Optional[time] = None
+    day_of_week: Optional[int] = Field(None, ge=1, le=7, description="1=Monday, 7=Sunday for weekly habits")
 
 
 class HabitResponse(BaseModel):
@@ -59,6 +60,7 @@ class HabitResponse(BaseModel):
     completed_today: bool
     reminders_enabled: bool
     reminder_time: Optional[str]
+    day_of_week: Optional[int] = None
 
 
 class DayHabitsResponse(BaseModel):

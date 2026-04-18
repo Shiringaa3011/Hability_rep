@@ -132,6 +132,7 @@ class HabitModel(Base):
     created_at = Column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+    day_of_week = Column(Integer, nullable=True)
 
     user = relationship("UserModel", back_populates="habits")
     completions = relationship(

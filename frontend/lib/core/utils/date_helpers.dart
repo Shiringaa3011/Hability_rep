@@ -34,3 +34,34 @@ bool isYesterday(DateTime date) {
       date.month == yesterday.month &&
       date.day == yesterday.day;
 }
+
+String getWeekdayFullName(DateTime date) {
+  final weekdays = [
+    'Понедельник',
+    'Вторник',
+    'Среда',
+    'Четверг',
+    'Пятница',
+    'Суббота',
+    'Воскресенье',
+  ];
+  return weekdays[date.weekday - 1];
+}
+
+String getWeekdayShortName(DateTime date) {
+  final weekdays = [
+    'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'
+  ];
+  return weekdays[date.weekday - 1];
+}
+
+String getWeekdayNameByValue(int value, {bool short = false}) {
+  final full = [
+    'Понедельник', 'Вторник', 'Среда', 'Четверг',
+    'Пятница', 'Суббота', 'Воскресенье'
+  ];
+  final shortNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+  
+  if (value < 1 || value > 7) return '';
+  return short ? shortNames[value - 1] : full[value - 1];
+}

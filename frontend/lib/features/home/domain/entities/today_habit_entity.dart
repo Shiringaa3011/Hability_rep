@@ -11,6 +11,7 @@ class TodayHabitEntity extends Equatable {
   final String? groupName;
   final bool remindersEnabled;
   final String? reminderTimeLabel;
+  final int? dayOfWeek;
 
   const TodayHabitEntity({
     required this.id,
@@ -23,6 +24,7 @@ class TodayHabitEntity extends Equatable {
     this.groupName,
     this.remindersEnabled = false,
     this.reminderTimeLabel,
+    this.dayOfWeek,
   });
 
   TodayHabitEntity copyWith({

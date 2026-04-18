@@ -39,9 +39,13 @@ async def get_day_habits(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    weekday = day.isoweekday()
+    
     stmt = select(HabitModel).where(
         HabitModel.user_id == user_id,
-        HabitModel.is_active == True,  # noqa: E712
+        HabitModel.is_active == True,
+        (HabitModel.frequency == 'daily') | 
+        (HabitModel.frequency == 'weekly') & (HabitModel.day_of_week == weekday)
     )
     if group_id:
         stmt = stmt.where(HabitModel.group_id == group_id)
@@ -100,6 +104,7 @@ async def get_habit(habit_id: UUID, db: AsyncSession = Depends(get_db)):
         completed_today=False,
         reminders_enabled=bool(habit.reminder_enabled),
         reminder_time=_time_to_label(habit.reminder_time),
+        day_of_week=habit.day_of_week,
     )
 
 
@@ -108,6 +113,10 @@ async def create_habit(request: HabitCreateUpdateRequest, db: AsyncSession = Dep
     user = await db.get(UserModel, request.user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+
+    if request.frequency == "weekly" and request.day_of_week is None:
+        raise HTTPException(status_code=400, detail="day_of_week is required for weekly habits")
+    
     habit = HabitModel(
         user_id=request.user_id,
         name=request.title.strip(),
@@ -119,6 +128,7 @@ async def create_habit(request: HabitCreateUpdateRequest, db: AsyncSession = Dep
         scheduled_time=request.scheduled_time,
         reminder_enabled=request.reminders_enabled,
         reminder_time=request.reminder_time,
+        day_of_week=request.day_of_week if request.frequency == "weekly" else None,
         is_active=True,
     )
     db.add(habit)
@@ -136,6 +146,7 @@ async def create_habit(request: HabitCreateUpdateRequest, db: AsyncSession = Dep
         completed_today=False,
         reminders_enabled=bool(habit.reminder_enabled),
         reminder_time=_time_to_label(habit.reminder_time),
+        day_of_week=habit.day_of_week,
     )
 
 
@@ -149,6 +160,9 @@ async def update_habit(
     if habit.user_id != request.user_id:
         raise HTTPException(status_code=403, detail="Access denied")
 
+    if request.frequency == "weekly" and request.day_of_week is None:
+        raise HTTPException(status_code=400, detail="day_of_week is required for weekly habits")
+
     habit.name = request.title.strip()
     habit.description = request.description.strip() if request.description else None
     habit.group_id = request.group_id
@@ -157,6 +171,8 @@ async def update_habit(
     habit.scheduled_time = request.scheduled_time
     habit.reminder_enabled = request.reminders_enabled
     habit.reminder_time = request.reminder_time
+    habit.day_of_week = request.day_of_week if request.frequency == "weekly" else None
+    
     await db.flush()
     await db.refresh(habit)
     return HabitResponse(
@@ -171,6 +187,7 @@ async def update_habit(
         completed_today=False,
         reminders_enabled=bool(habit.reminder_enabled),
         reminder_time=_time_to_label(habit.reminder_time),
+        day_of_week=habit.day_of_week,
     )
 
 
