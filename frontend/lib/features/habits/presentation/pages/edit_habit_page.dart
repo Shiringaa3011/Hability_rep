@@ -234,9 +234,13 @@ class _EditHabitPageState extends State<EditHabitPage> {
             ),
             DropdownButtonFormField<String?>(
               value: _groupId,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Группа',
                 border: OutlineInputBorder(),
+                helperText: 'Группу нельзя изменить после создания привычки',
+                helperStyle: const TextStyle(fontSize: 12, color: Colors.grey),
+                fillColor: Colors.grey.shade100,
+                filled: true,
               ),
               items: [
                 const DropdownMenuItem<String?>(
@@ -250,17 +254,8 @@ class _EditHabitPageState extends State<EditHabitPage> {
                   ),
                 ),
               ],
-              onChanged: (gid) {
-                setState(() {
-                  _groupId = gid;
-                  if (gid == null) {
-                    _groupName = 'Личное';
-                  } else {
-                    final match = _groups.where((e) => e.groupId == gid);
-                    _groupName = match.isEmpty ? 'Группа' : match.first.title;
-                  }
-                });
-              },
+              onChanged: null,
+              style: const TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 16),
             Text('Напоминания', style: Theme.of(context).textTheme.titleMedium),
