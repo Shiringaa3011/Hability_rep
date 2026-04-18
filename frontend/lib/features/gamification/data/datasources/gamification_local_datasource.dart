@@ -4,6 +4,7 @@ import '../../../../core/constants/api_constants.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../domain/entities/user_stats.dart';
 import '../models/achievement_model.dart';
+import '../models/group_stats_model.dart';
 import '../models/user_level_model.dart';
 import '../models/user_stats_model.dart';
 
@@ -20,6 +21,10 @@ abstract class GamificationLocalDataSource {
 
   Future<void> cacheAchievements(String userId, List<AchievementModel> achievements);
 
+  Future<GroupStatsModel?> getCachedGroupStats(String groupId, StatsPeriod period);
+
+  Future<void> cacheGroupStats(GroupStatsModel stats);
+
   Future<void> clearCache();
 }
 
@@ -31,6 +36,7 @@ class GamificationLocalDataSourceImpl implements GamificationLocalDataSource {
   static const String _levelBoxName = 'user_level';
   static const String _statsBoxName = 'user_stats';
   static const String _achievementsBoxName = 'achievements';
+  static const String _groupStatsBoxName = 'group_stats';
   static const String _cacheTimeBoxName = 'cache_time';
 
   @override
@@ -154,11 +160,56 @@ class GamificationLocalDataSourceImpl implements GamificationLocalDataSource {
   }
 
   @override
+  Future<GroupStatsModel?> getCachedGroupStats(
+    String groupId,
+    StatsPeriod period,
+  ) async {
+    try {
+      final box = await hive.openBox<Map>(_groupStatsBoxName);
+      final cacheTimeBox = await hive.openBox<DateTime>(_cacheTimeBoxName);
+
+      final key = '${groupId}_${period.name}';
+      final cacheTime = cacheTimeBox.get('group_stats_$key');
+
+      if (cacheTime != null) {
+        final age = DateTime.now().difference(cacheTime);
+        if (age > ApiConstants.statsCache) {
+          await box.delete(key);
+          await cacheTimeBox.delete('group_stats_$key');
+          return null;
+        }
+      }
+
+      final data = box.get(key);
+      if (data == null) return null;
+
+      return GroupStatsModel.fromJson(Map<String, dynamic>.from(data));
+    } catch (e) {
+      throw CacheException('Failed to get cached group stats: $e');
+    }
+  }
+
+  @override
+  Future<void> cacheGroupStats(GroupStatsModel stats) async {
+    try {
+      final box = await hive.openBox<Map>(_groupStatsBoxName);
+      final cacheTimeBox = await hive.openBox<DateTime>(_cacheTimeBoxName);
+
+      final key = '${stats.groupId}_${stats.period}';
+      await box.put(key, stats.toJson());
+      await cacheTimeBox.put('group_stats_$key', DateTime.now());
+    } catch (e) {
+      throw CacheException('Failed to cache group stats: $e');
+    }
+  }
+
+  @override
   Future<void> clearCache() async {
     try {
       await hive.deleteBoxFromDisk(_levelBoxName);
       await hive.deleteBoxFromDisk(_statsBoxName);
       await hive.deleteBoxFromDisk(_achievementsBoxName);
+      await hive.deleteBoxFromDisk(_groupStatsBoxName);
       await hive.deleteBoxFromDisk(_cacheTimeBoxName);
     } catch (e) {
       throw CacheException('Failed to clear cache: $e');

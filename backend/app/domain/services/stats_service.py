@@ -1,11 +1,18 @@
 from datetime import date, datetime, timedelta
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from uuid import UUID
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.models.gamification import HabitStats
-from app.domain.models.stats import StatsPeriod, UserStats as UserStatsEntity
+from app.domain.models.stats import (
+    GroupMemberStats,
+    GroupStats,
+    StatsPeriod,
+    UserStats as UserStatsEntity,
+)
+from app.infrastructure.database.models import GroupMemberModel, UserModel
 from app.infrastructure.database.repositories.completion_repository import (
     CompletionRepository,
 )
@@ -41,6 +48,7 @@ class StatsService:
             if expected_completions > 0
             else 0
         )
+        missed_count = max(0, expected_completions - total_completions)
 
         current_streak, max_streak = await self._calculate_streaks(user_id)
 
@@ -56,6 +64,7 @@ class StatsService:
             max_streak=max_streak,
             total_points_period=total_points,  # type: ignore[arg-type]
             updated_at=datetime.now(),
+            missed_count=missed_count,
         )
 
         await self.stats_repo.upsert_stats(
@@ -99,6 +108,7 @@ class StatsService:
             if expected_completions > 0
             else 0
         )
+        missed_count = max(0, expected_completions - total_completions)
 
         return HabitStats(
             habit_id=habit_id,
@@ -108,6 +118,7 @@ class StatsService:
             max_streak=max_streak,
             total_points_earned=total_points,  # type: ignore[arg-type]
             completion_rate=round(completion_rate, 2),
+            missed_count=missed_count,
         )
 
     async def get_user_habits_stats(
@@ -125,14 +136,98 @@ class StatsService:
 
     async def get_group_stats(
         self, group_id: UUID, period: StatsPeriod = StatsPeriod.WEEK
-    ) -> Dict:
-        return {
-            "group_id": str(group_id),
-            "period": period.value,
-            "members": [],
-            "total_completions": 0,
-            "average_completion_rate": 0.0,
-        }
+    ) -> GroupStats:
+        members_info = await self._get_group_members_with_username(group_id)
+
+        if not members_info:
+            return GroupStats(group_id=group_id, period=period)
+
+        raw_members = []
+        for user_id, username in members_info:
+            completions, rate, points = await self._compute_member_period_stats(
+                user_id, period
+            )
+            raw_members.append(
+                {
+                    "user_id": user_id,
+                    "username": username,
+                    "total_completions": completions,
+                    "completion_rate": rate,
+                    "total_points": points,
+                }
+            )
+
+        ranked = self._rank_members(raw_members)
+
+        total_points_group = sum(m.total_points for m in ranked)
+        total_completions = sum(m.total_completions for m in ranked)
+        average_rate = sum(m.completion_rate for m in ranked) / len(ranked)
+        active_count = sum(1 for m in ranked if m.total_completions > 0)
+
+        return GroupStats(
+            group_id=group_id,
+            period=period,
+            members=ranked,
+            total_points_group=total_points_group,
+            average_completion_rate=round(average_rate, 2),
+            total_completions=total_completions,
+            active_members_count=active_count,
+        )
+
+    async def _get_group_members_with_username(
+        self, group_id: UUID
+    ) -> List[Tuple[UUID, str]]:
+        result = await self.session.execute(
+            select(GroupMemberModel.user_id, UserModel.username)
+            .join(UserModel, UserModel.id == GroupMemberModel.user_id)
+            .where(GroupMemberModel.group_id == group_id)
+        )
+        return [(row.user_id, row.username) for row in result.all()]
+
+    async def _compute_member_period_stats(
+        self, user_id: UUID, period: StatsPeriod
+    ) -> Tuple[int, float, int]:
+        start_date, end_date = self._get_date_range(period)
+
+        completions = await self.completion_repo.get_by_user(
+            user_id, start_date, end_date
+        )
+        habits = await self.habit_repo.get_by_user(user_id, active_only=True)
+
+        total_completions = len(completions)
+        expected = self._calculate_expected_completions(habits, period)
+        completion_rate = (
+            (total_completions / expected * 100) if expected > 0 else 0.0
+        )
+        total_points = sum(c.points_earned for c in completions)  # type: ignore[misc]
+
+        return total_completions, round(completion_rate, 2), total_points
+
+    @staticmethod
+    def _rank_members(raw_members: List[Dict]) -> List[GroupMemberStats]:
+        sorted_members = sorted(
+            raw_members,
+            key=lambda m: (-m["total_points"], m["username"]),
+        )
+
+        ranked: List[GroupMemberStats] = []
+        prev_points: Optional[int] = None
+        current_rank = 0
+        for index, member in enumerate(sorted_members):
+            if member["total_points"] != prev_points:
+                current_rank = index + 1
+                prev_points = member["total_points"]
+            ranked.append(
+                GroupMemberStats(
+                    user_id=member["user_id"],
+                    username=member["username"],
+                    rank=current_rank,
+                    total_completions=member["total_completions"],
+                    completion_rate=member["completion_rate"],
+                    total_points=member["total_points"],
+                )
+            )
+        return ranked
 
     def _get_date_range(self, period: StatsPeriod) -> tuple[datetime, datetime]:
         today = date.today()

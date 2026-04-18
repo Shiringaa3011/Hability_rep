@@ -7,6 +7,7 @@ from app.core.database import get_db
 from app.domain.models.stats import StatsPeriod
 from app.domain.services.stats_service import StatsService
 from app.schemas.stats import (
+    GroupMemberStatsResponse,
     GroupStatsResponse,
     HabitStatsResponse,
     UserHabitsStatsResponse,
@@ -40,6 +41,7 @@ async def get_user_stats(
         current_streak=stats.current_streak,
         max_streak=stats.max_streak,
         total_points_earned=stats.total_points_period,
+        missed_count=stats.missed_count,
         updated_at=stats.updated_at,
     )
 
@@ -66,6 +68,7 @@ async def get_user_habits_stats(
                 max_streak=hs.max_streak,
                 total_points_earned=hs.total_points_earned,
                 completion_rate=hs.completion_rate,
+                missed_count=hs.missed_count,
             )
             for hs in habits_stats
         ],
@@ -103,9 +106,21 @@ async def get_group_stats(
     stats = await service.get_group_stats(group_id, period)
 
     return GroupStatsResponse(
-        group_id=group_id,
-        period=period,
-        total_completions=stats.get("total_completions", 0),
-        average_completion_rate=stats.get("average_completion_rate", 0.0),
-        members=stats.get("members", []),
+        group_id=stats.group_id,
+        period=stats.period,
+        total_completions=stats.total_completions,
+        average_completion_rate=stats.average_completion_rate,
+        total_points_group=stats.total_points_group,
+        active_members_count=stats.active_members_count,
+        members=[
+            GroupMemberStatsResponse(
+                user_id=m.user_id,
+                username=m.username,
+                rank=m.rank,
+                total_completions=m.total_completions,
+                completion_rate=m.completion_rate,
+                total_points=m.total_points,
+            )
+            for m in stats.members
+        ],
     )

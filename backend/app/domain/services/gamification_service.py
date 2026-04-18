@@ -4,6 +4,7 @@ from typing import Optional, Tuple
 from uuid import UUID
 from app.domain.services.achievement_service import AchievementService
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.models.gamification import (
@@ -66,7 +67,11 @@ class GamificationService:
             points_earned=points_earned,
             current_streak=current_streak,
         )
-        completion = await self.completion_repo.create(completion)
+        try:
+            completion = await self.completion_repo.create(completion)
+        except IntegrityError as exc:
+            await self.session.rollback()
+            raise ValueError("Habit already completed today") from exc
 
         await self.user_repo.add_points(user_id, points_earned)
 

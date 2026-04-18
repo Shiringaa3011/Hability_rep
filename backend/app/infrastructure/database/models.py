@@ -14,6 +14,7 @@ from sqlalchemy import (
     Time,
     TypeDecorator,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from sqlalchemy.orm import relationship
@@ -170,6 +171,13 @@ class HabitCompletionModel(Base):
 
     __table_args__ = (
         Index("ix_completions_habit_date", "habit_id", "completed_at"),
+        Index(
+            "uq_completion_per_day",
+            "habit_id",
+            "user_id",
+            func.date(text("completed_at")),
+            unique=True,
+        ),
     )
 
     def __repr__(self):

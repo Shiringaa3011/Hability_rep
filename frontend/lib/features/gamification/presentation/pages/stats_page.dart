@@ -175,6 +175,19 @@ class _StatsContent extends StatelessWidget {
             ),
           ],
         ),
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            Expanded(
+              child: _MiniStat(
+                label: 'ПРОПУСКИ',
+                value: '${stats.missedCount}',
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            const Expanded(child: SizedBox.shrink()),
+          ],
+        ),
         if (state.habitsStats.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.xl),
           DSSectionHeader(label: 'По каждой привычке'),
@@ -326,7 +339,16 @@ class _HabitStatCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           DSProgressBar(value: habit.completionRate / 100, height: 6),
           const SizedBox(height: AppSpacing.md),
-          DSStreakBadge(days: habit.currentStreak),
+          Row(
+            children: [
+              DSStreakBadge(days: habit.currentStreak),
+              const Spacer(),
+              Text(
+                'Пропуски: ${habit.missedCount}',
+                style: AppTextStyles.caption.copyWith(color: colors.mutedForeground),
+              ),
+            ],
+          ),
         ],
       ),
     );
