@@ -34,6 +34,7 @@ class _EditHabitPageState extends State<EditHabitPage> {
   bool _reminders = false;
   TimeOfDay? _reminderTime;
   bool _loading = true;
+  bool _loadError = false;
 
   @override
   void initState() {
@@ -42,25 +43,37 @@ class _EditHabitPageState extends State<EditHabitPage> {
   }
 
   Future<void> _bootstrap() async {
-    final habit = await di.sl<GetHabitById>()(widget.habitId);
-    final groups = await di.sl<GetHomeGroupFilterOptions>()(widget.userId);
-    if (!mounted) return;
-    if (habit == null) {
-      setState(() => _loading = false);
-      return;
+    try {
+      final habit = await di.sl<GetHabitById>()(widget.habitId);
+      final groups = await di.sl<GetHomeGroupFilterOptions>()(widget.userId);
+      if (!mounted) return;
+      
+      if (habit == null) {
+        setState(() {
+          _loadError = true;
+          _loading = false;
+        });
+        return;
+      }
+      
+      _title.text = habit.title;
+      _description.text = habit.description ?? '';
+      _frequency = habit.frequencyLabel ?? 'Ежедневно';
+      _time = _parseTime(habit.scheduledTimeLabel);
+      _groupId = habit.groupId;
+      _groupName = habit.groupName;
+      _reminders = habit.remindersEnabled;
+      _reminderTime = _parseTime(habit.reminderTimeLabel);
+      setState(() {
+        _groups = groups.where((g) => g.groupId != null).toList();
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _loadError = true;
+        _loading = false;
+      });
     }
-    _title.text = habit.title;
-    _description.text = habit.description ?? '';
-    _frequency = habit.frequencyLabel ?? 'Ежедневно';
-    _time = _parseTime(habit.scheduledTimeLabel);
-    _groupId = habit.groupId;
-    _groupName = habit.groupName;
-    _reminders = habit.remindersEnabled;
-    _reminderTime = _parseTime(habit.reminderTimeLabel);
-    setState(() {
-      _groups = groups.where((g) => g.groupId != null).toList();
-      _loading = false;
-    });
   }
 
   TimeOfDay? _parseTime(String? s) {
@@ -162,7 +175,8 @@ class _EditHabitPageState extends State<EditHabitPage> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-    if (_title.text.isEmpty) {
+
+    if (_loadError) {
       return Scaffold(
         appBar: AppBar(title: const Text('Привычка')),
         body: const Center(child: Text('Привычка не найдена')),
