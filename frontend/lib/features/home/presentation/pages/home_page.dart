@@ -10,6 +10,7 @@ import '../../domain/repositories/home_repository.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
+import '../../../../core/utils/date_helpers.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({required this.userId, super.key});
@@ -34,16 +35,6 @@ class _HabitsScaffold extends StatelessWidget {
   const _HabitsScaffold({required this.userId});
 
   final String userId;
-
-  static const List<String> _monthsRu = [
-    'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
-    'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь',
-  ];
-
-  static const List<String> _weekdaysFullRu = [
-    'понедельник', 'вторник', 'среда', 'четверг',
-    'пятница', 'суббота', 'воскресенье',
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -125,9 +116,6 @@ class _HabitsScaffold extends StatelessWidget {
       context.read<HomeBloc>().add(HomeLoadRequested(userId));
     }
   }
-
-  static String monthLabel(DateTime d) => _monthsRu[d.month - 1];
-  static String weekdayLabel(DateTime d) => _weekdaysFullRu[d.weekday - 1];
 }
 
 class _Header extends StatelessWidget {
@@ -142,14 +130,14 @@ class _Header extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          _HabitsScaffold.monthLabel(day).toUpperCase(),
+          getMonthName(day).toUpperCase(),
           style: AppTextStyles.overline.copyWith(color: colors.mutedForeground),
         ),
-        const SizedBox(height: 4),
+        /*const SizedBox(height: 4),
         Text(
           '${_HabitsScaffold.weekdayLabel(day)}, ${day.day}',
           style: AppTextStyles.bodySmall.copyWith(color: colors.mutedForeground),
-        ),
+        ),*/
       ],
     );
   }

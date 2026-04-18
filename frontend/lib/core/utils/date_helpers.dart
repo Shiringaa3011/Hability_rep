@@ -65,3 +65,11 @@ String getWeekdayNameByValue(int value, {bool short = false}) {
   if (value < 1 || value > 7) return '';
   return short ? shortNames[value - 1] : full[value - 1];
 }
+
+String getMonthName(DateTime date) {
+  const months = [
+    'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
+    'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'
+  ];
+  return months[date.month - 1];
+}
