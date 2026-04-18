@@ -7,7 +7,8 @@ class GroupEntity extends Equatable {
   final String createdBy;
   final DateTime createdAt;
   final bool isActive;
-  
+  final int habitsCount;
+
   const GroupEntity({
     required this.id,
     required this.name,
@@ -15,8 +16,11 @@ class GroupEntity extends Equatable {
     required this.createdBy,
     required this.createdAt,
     this.isActive = true,
+    this.habitsCount = 0,
   });
-  
+
   @override
-  List<Object?> get props => [id, name, description, createdBy, createdAt, isActive];
+  List<Object?> get props => [
+    id, name, description, createdBy, createdAt, isActive, habitsCount
+  ];
 }

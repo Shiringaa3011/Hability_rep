@@ -23,6 +23,7 @@ class GroupRepositoryImpl implements GroupRepository {
         createdBy: m['created_by'] as String,
         createdAt: DateTime.parse(m['created_at'] as String),
         isActive: m['is_active'] as bool? ?? true,
+        habitsCount: m['habits_count'] as int? ?? 0,
       );
     }).toList();
   }

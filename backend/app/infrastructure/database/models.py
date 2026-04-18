@@ -138,6 +138,8 @@ class HabitModel(Base):
         "HabitCompletionModel", back_populates="habit", cascade="all, delete-orphan"
     )
 
+    group = relationship("GroupModel", back_populates="habits")
+
     __table_args__ = (Index("ix_habits_user_active", "user_id", "is_active"),)
 
     def __repr__(self):
@@ -267,6 +269,7 @@ class GroupModel(Base):
     members = relationship(
         "GroupMemberModel", back_populates="group", cascade="all, delete-orphan"
     )
+    habits = relationship("HabitModel", back_populates="group")
 
     def __repr__(self):
         return f"<Group(id={self.id}, name={self.name})>"

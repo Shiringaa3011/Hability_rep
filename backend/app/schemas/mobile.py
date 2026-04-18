@@ -18,6 +18,7 @@ class GroupResponse(BaseModel):
     created_by: UUID
     created_at: datetime
     is_active: bool
+    habits_count: int = Field(default=0)
 
 
 class GroupMemberResponse(BaseModel):

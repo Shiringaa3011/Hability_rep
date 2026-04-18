@@ -14,6 +14,7 @@ from app.infrastructure.database.models import (
     HabitCompletionModel,
     NotificationModel,
     UserModel,
+    HabitModel,
 )
 from app.schemas.mobile import (
     GroupCreateRequest,
@@ -30,24 +31,45 @@ router = APIRouter()
 
 @router.get("/user/{user_id}", response_model=list[GroupResponse])
 async def get_user_groups(user_id: UUID, db: AsyncSession = Depends(get_db)):
+    habits_count_subq = (
+        select(
+            HabitModel.group_id,
+            func.count(HabitModel.id).label("habits_count")
+        )
+        .where(HabitModel.is_active == True)
+        .group_by(HabitModel.group_id)
+        .subquery()
+    )
+    
     stmt = (
-        select(GroupModel)
+        select(
+            GroupModel,
+            func.coalesce(habits_count_subq.c.habits_count, 0).label("habits_count")
+        )
+        .outerjoin(habits_count_subq, GroupModel.id == habits_count_subq.c.group_id)
         .join(GroupMemberModel, GroupMemberModel.group_id == GroupModel.id)
-        .where(GroupMemberModel.user_id == user_id, GroupModel.is_active == True)  # noqa: E712
+        .where(
+            GroupMemberModel.user_id == user_id,
+            GroupModel.is_active == True
+        )
         .order_by(GroupModel.created_at.desc())
     )
+    
     rows = await db.execute(stmt)
-    return [
-        GroupResponse(
-            id=g.id,
-            name=g.name,
-            description=g.description,
-            created_by=g.created_by,
-            created_at=g.created_at,
-            is_active=g.is_active,
+    result = []
+    for group, habits_count in rows:
+        result.append(
+            GroupResponse(
+                id=group.id,
+                name=group.name,
+                description=group.description,
+                created_by=group.created_by,
+                created_at=group.created_at,
+                is_active=group.is_active,
+                habits_count=habits_count,
+            )
         )
-        for g in rows.scalars().all()
-    ]
+    return result
 
 
 @router.post("", response_model=GroupResponse, status_code=status.HTTP_201_CREATED)
