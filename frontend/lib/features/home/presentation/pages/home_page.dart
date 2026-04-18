@@ -213,58 +213,59 @@ class _HabitTile extends StatelessWidget {
     final fg = colors.foreground;
     final isFutureDay = selectedDay.isAfter(DateTime.now());
 
-    return DSCard(
-      highlighted: habit.completedToday,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.md,
-      ),
-      onTap: () => _onEdit(context),
-      child: Row(
-        children: [
-          DSCheckCircle(
-            checked: habit.completedToday,
-            onTap: isFutureDay
-                ? () {}
-                : () {
-                    context.read<HomeBloc>().add(
-                          HomeHabitToggled(
-                            habitId: habit.id,
-                            completed: !habit.completedToday,
-                          ),
-                        );
-                  },
-          ),
-          const SizedBox(width: AppSpacing.lg),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  habit.title,
-                  style: AppTextStyles.titleSmall.copyWith(
-                    color: habit.completedToday ? muted : fg,
-                    decoration: habit.completedToday
-                        ? TextDecoration.lineThrough
-                        : null,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (_subtitle(habit) != null) ...[
-                  const SizedBox(height: 2),
+    return Opacity(
+      opacity: isFutureDay ? 0.65 : 1.0,
+      child: DSCard(
+        highlighted: habit.completedToday,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
+        ),
+        onTap: isFutureDay ? null : () => _onEdit(context),
+        child: Row(
+          children: [
+            DSCheckCircle(
+              checked: habit.completedToday,
+              onTap: isFutureDay
+                  ? () {}
+                  : () {
+                      context.read<HomeBloc>().add(
+                            HomeHabitToggled(
+                              habitId: habit.id,
+                              completed: !habit.completedToday,
+                            ),
+                          );
+                    },
+            ),
+            const SizedBox(width: AppSpacing.lg),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
                   Text(
-                    _subtitle(habit)!,
-                    style: AppTextStyles.caption.copyWith(color: muted),
+                    habit.title,
+                    style: AppTextStyles.titleSmall.copyWith(
+                      color: habit.completedToday ? muted : fg,
+                      decoration: habit.completedToday ? TextDecoration.lineThrough : null,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  if (_subtitle(habit) != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      _subtitle(habit)!,
+                      style: AppTextStyles.caption.copyWith(color: muted),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
