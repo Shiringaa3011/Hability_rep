@@ -13,11 +13,19 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.execute(
-        "CREATE UNIQUE INDEX uq_completion_per_day "
-        "ON habit_completions (habit_id, user_id, (completed_at::date))"
-    )
+    op.execute("""
+        CREATE OR REPLACE FUNCTION to_utc_date(timestamptz)
+        RETURNS date AS $$
+            SELECT ($1 AT TIME ZONE 'UTC')::date;
+        $$ LANGUAGE SQL IMMUTABLE
+    """)
+    
+    op.execute("""
+        CREATE UNIQUE INDEX uq_completion_per_day 
+        ON habit_completions (habit_id, user_id, to_utc_date(completed_at))
+    """)
 
 
 def downgrade() -> None:
     op.execute("DROP INDEX IF EXISTS uq_completion_per_day")
+    op.execute("DROP FUNCTION IF EXISTS to_utc_date(timestamptz)")

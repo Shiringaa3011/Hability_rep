@@ -126,4 +126,9 @@ class HomeRepositoryImpl implements HomeRepository {
       await dio.put('${ApiConstants.habitsPath}/${habit.id}', data: payload);
     }
   }
+
+  @override
+  Future<void> deleteHabit(String habitId, String userId) async {
+    await dio.delete('${ApiConstants.habitsPath}/$habitId', data: {'user_id': userId});
+  }
 }

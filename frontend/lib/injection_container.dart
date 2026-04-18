@@ -39,6 +39,7 @@ import 'features/home/domain/usecases/get_today_habits_for_day.dart';
 import 'features/home/domain/usecases/toggle_habit_completion.dart';
 import 'features/home/domain/usecases/get_habit_by_id.dart';
 import 'features/home/domain/usecases/upsert_habit_definition.dart';
+import 'features/home/domain/usecases/delete_habit.dart';
 
 import 'features/notifications/data/repositories/notifications_repository_impl.dart';
 import 'features/notifications/domain/repositories/notifications_repository.dart';
@@ -135,4 +136,6 @@ Future<void> _initGamification() async {
   sl.registerLazySingleton<GamificationLocalDataSource>(
     () => GamificationLocalDataSourceImpl(hive: sl()),
   );
+
+  sl.registerLazySingleton(() => DeleteHabitUseCase(sl<HomeRepository>()));
 }

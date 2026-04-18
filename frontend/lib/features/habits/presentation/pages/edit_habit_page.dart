@@ -6,6 +6,7 @@ import '../../../home/domain/usecases/get_home_group_filter_options.dart';
 import '../../../home/domain/usecases/get_habit_by_id.dart';
 import '../../../home/domain/usecases/upsert_habit_definition.dart';
 import '../../../../injection_container.dart' as di;
+import '../../../home/domain/usecases/delete_habit.dart';
 
 class EditHabitPage extends StatefulWidget {
   final String userId;
@@ -113,6 +114,45 @@ class _EditHabitPageState extends State<EditHabitPage> {
     await di.sl<UpsertHabitDefinition>()(widget.userId, habit);
     if (!mounted) return;
     Navigator.of(context).pop(true);
+  }
+
+  Future<void> _deleteHabit() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Удалить привычку?'),
+        content: const Text('Это действие нельзя отменить.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Отмена'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Удалить'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await di.sl<DeleteHabitUseCase>()(widget.habitId, widget.userId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Привычка удалена')),
+        );
+        Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -230,6 +270,15 @@ class _EditHabitPageState extends State<EditHabitPage> {
             FilledButton(
               onPressed: canSave ? _save : null,
               child: const Text('Сохранить'),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: _deleteHabit,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.red,
+                side: const BorderSide(color: Colors.red),
+              ),
+              child: const Text('Удалить привычку'),
             ),
           ],
         ),
