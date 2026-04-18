@@ -103,7 +103,7 @@ class _HabitsScaffold extends StatelessWidget {
                   ...state.habits.map(
                     (h) => Padding(
                       padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                      child: _HabitTile(habit: h, userId: userId),
+                      child: _HabitTile(habit: h, userId: userId, selectedDay: state.selectedDay,),
                     ),
                   ),
               ],
@@ -196,16 +196,22 @@ class _ProgressSummary extends StatelessWidget {
 }
 
 class _HabitTile extends StatelessWidget {
-  const _HabitTile({required this.habit, required this.userId});
+  const _HabitTile({
+    required this.habit,
+    required this.userId,
+    required this.selectedDay,
+  });
 
   final TodayHabitEntity habit;
   final String userId;
+  final DateTime selectedDay;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final muted = colors.mutedForeground;
     final fg = colors.foreground;
+    final isFutureDay = selectedDay.isAfter(DateTime.now());
 
     return DSCard(
       highlighted: habit.completedToday,
@@ -218,14 +224,16 @@ class _HabitTile extends StatelessWidget {
         children: [
           DSCheckCircle(
             checked: habit.completedToday,
-            onTap: () {
-              context.read<HomeBloc>().add(
-                    HomeHabitToggled(
-                      habitId: habit.id,
-                      completed: !habit.completedToday,
-                    ),
-                  );
-            },
+            onTap: isFutureDay
+                ? () {}
+                : () {
+                    context.read<HomeBloc>().add(
+                          HomeHabitToggled(
+                            habitId: habit.id,
+                            completed: !habit.completedToday,
+                          ),
+                        );
+                  },
           ),
           const SizedBox(width: AppSpacing.lg),
           Expanded(

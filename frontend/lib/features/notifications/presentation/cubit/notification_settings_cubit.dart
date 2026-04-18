@@ -28,7 +28,7 @@ class NotificationSettingsCubit extends Cubit<NotificationSettingsSnapshot> {
   final SaveNotificationSettings _saveSettings;
 
   Future<void> load() async {
-    await _bootstrapPipeline(userId);
+    //await _bootstrapPipeline(userId);
     final s = await _getSettings(userId);
     emit(s);
   }

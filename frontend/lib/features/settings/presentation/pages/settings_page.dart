@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:habitly/features/notifications/presentation/pages/notification_settings_page.dart';
 import '../../../auth/presentation/pages/register_page.dart';
 import '../../../notifications/presentation/pages/notification_settings_page.dart';
 import '../../../profile/presentation/pages/profile_page.dart';

@@ -10,6 +10,8 @@ import 'features/home/presentation/pages/home_page.dart';
 import 'features/profile/presentation/pages/profile_page.dart';
 import 'injection_container.dart' as di;
 
+import 'core/services/auth_storage.dart'; 
+import 'features/auth/presentation/pages/register_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -35,16 +37,70 @@ class HabitlyApp extends StatelessWidget {
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
         themeMode: ThemeModeController.instance.value,
-        home: const _MainShell(),
+        initialRoute: '/',
+        routes: {
+          '/': (context) => const AuthWrapper(),
+          '/home': (context) {
+            // Извлекаем userId из аргументов
+            final args = ModalRoute.of(context)?.settings.arguments as String;
+            return _MainShell(userId: args);
+          },
+        },
       ),
     );
   }
 }
 
-class _MainShell extends StatefulWidget {
-  const _MainShell();
 
-  static const String mockUserId = '00000000-0000-0000-0000-000000000001';
+class AuthWrapper extends StatefulWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  bool _isLoading = true;
+  String? _userId;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAuth();
+  }
+
+  Future<void> _checkAuth() async {
+    final authStorage = di.sl<AuthStorage>();
+    final userId = await authStorage.getUserId();
+    final isValid = userId != null && userId.isNotEmpty;
+    setState(() {
+      _userId = isValid ? userId : null;
+      _isLoading = false;
+    });
+  }
+ @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // Если пользователь не залогинен — показываем экран регистрации
+    if (_userId == null) {
+      return const RegisterPage();  // LoginPage !!!!
+    }
+
+    // Пользователь залогинен — показываем главный экран с его userId
+    return _MainShell(userId: _userId!);
+  }
+}
+
+
+class _MainShell extends StatefulWidget {
+  final String userId;
+
+  _MainShell({required this.userId});
 
   @override
   State<_MainShell> createState() => _MainShellState();
@@ -86,12 +142,12 @@ class _MainShellState extends State<_MainShell> {
     return Scaffold(
       body: IndexedStack(
         index: _index,
-        children: const [
-          HomePage(userId: _MainShell.mockUserId),
-          StatsPage(userId: _MainShell.mockUserId),
-          AchievementsPage(userId: _MainShell.mockUserId),
-          GroupsPage(userId: _MainShell.mockUserId),
-          ProfilePage(userId: _MainShell.mockUserId),
+        children: [
+          HomePage(userId: widget.userId),
+          StatsPage(userId: widget.userId),
+          AchievementsPage(userId: widget.userId),
+          GroupsPage(userId: widget.userId),
+          ProfilePage(userId: widget.userId),
         ],
       ),
       bottomNavigationBar: DSBottomNav(

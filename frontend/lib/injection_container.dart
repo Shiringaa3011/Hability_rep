@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive/hive.dart';
 
+import 'core/network/auth_interceptor.dart';
+import 'core/services/auth_storage.dart';
 import 'core/network/dio_client.dart';
 import 'features/gamification/data/datasources/gamification_local_datasource.dart';
 import 'features/gamification/data/datasources/gamification_remote_datasource.dart';
@@ -48,7 +50,7 @@ final sl = GetIt.instance;
 
 Future<void> init() async {
   sl.registerLazySingleton<Dio>(() => createDioClient());
-
+  
   sl.registerLazySingleton<HiveInterface>(() => Hive);
 
   sl.registerLazySingleton<GroupRepository>(() => GroupRepositoryImpl(dio: sl()));
@@ -79,6 +81,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetNotificationSettings(sl()));
   sl.registerLazySingleton(() => SaveNotificationSettings(sl()));
 
+//!!!!
+  sl.registerLazySingleton<AuthStorage>(() => AuthStorage());
   await _initGamification();
 }
 

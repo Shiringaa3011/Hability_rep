@@ -100,7 +100,7 @@ class _GroupDetailView extends StatelessWidget {
                           const SizedBox(height: 8),
                           if (detail.groupAchievements.isEmpty)
                             Text(
-                              'Пока нет наград (mock)',
+                              'Пока нет наград',
                               style: Theme.of(context).textTheme.bodySmall,
                             )
                           else

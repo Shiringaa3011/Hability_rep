@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/services/auth_storage.dart';
 import '../../../../injection_container.dart' as di;
 
 class RegisterPage extends StatefulWidget {
@@ -36,15 +37,24 @@ class _RegisterPageState extends State<RegisterPage> {
         },
       );
       if (!mounted) return;
+      
       final data = response.data as Map<String, dynamic>;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Успешно зарегистрирован: ${data['email']}',
-          ),
-        ),
+      final authStorage = di.sl<AuthStorage>();
+      await authStorage.saveUser(
+        userId: data['user_id'] as String,
+        username: data['username'] as String? ?? _email.text.trim().split('@').first,
+        email: data['email'] as String,
       );
-      Navigator.of(context).pop(data);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Регистрация успешна!')),
+        );
+        Navigator.of(context).pushReplacementNamed(
+          '/home',
+          arguments: data['user_id'] as String,
+        );
+      }
     } on DioException catch (e) {
       if (!mounted) return;
       final detail = e.response?.data is Map<String, dynamic>

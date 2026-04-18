@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/design_system/design_system.dart';
+import '../../../../core/services/auth_storage.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../injection_container.dart' as di;
 import '../../../gamification/domain/entities/user_level.dart';
@@ -13,7 +14,7 @@ import '../../../groups/domain/repositories/group_repository.dart';
 import '../../../notifications/presentation/pages/notification_history_page.dart';
 import '../../../notifications/presentation/pages/notification_settings_page.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({
     required this.userId,
     this.initialTab = 0,
@@ -24,18 +25,61 @@ class ProfilePage extends StatelessWidget {
   final int initialTab;
 
   @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  String? _username;
+  String? _email;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final authStorage = di.sl<AuthStorage>();
+    final username = await authStorage.getUsername();
+    final email = await authStorage.getEmail();
+
+    setState(() {
+      _username = username;
+      _email = email;
+      _isLoading = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return BlocProvider(
-      create: (_) => di.sl<LevelBloc>()..add(LoadLevel(userId)),
-      child: _ProfileScaffold(userId: userId),
+      create: (_) => di.sl<LevelBloc>()..add(LoadLevel(widget.userId)),
+      child: _ProfileScaffold(
+        userId: widget.userId,
+        username: _username ?? 'Пользователь',
+        email: _email ?? '',
+      ),
     );
   }
 }
 
 class _ProfileScaffold extends StatelessWidget {
-  const _ProfileScaffold({required this.userId});
+  const _ProfileScaffold({
+    required this.userId,
+    required this.username,
+    required this.email,
+  });
 
   final String userId;
+  final String username;
+  final String email;
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +96,11 @@ class _ProfileScaffold extends StatelessWidget {
         children: [
           _Header(),
           const SizedBox(height: AppSpacing.xl),
-          _IdentityCard(userId: userId),
+          _IdentityCard(
+            userId: userId,
+            username: username,
+            email: email,
+          ),
           const SizedBox(height: AppSpacing.xl),
           DSSectionHeader(label: 'Настройки'),
           const SizedBox(height: AppSpacing.md),
@@ -223,13 +271,21 @@ class _Header extends StatelessWidget {
 }
 
 class _IdentityCard extends StatelessWidget {
-  const _IdentityCard({required this.userId});
+  const _IdentityCard({
+    required this.userId,
+    required this.username,
+    required this.email,
+  });
 
   final String userId;
+  final String username;
+  final String email;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final firstLetter = username.isNotEmpty ? username[0].toUpperCase() : '?';
+    
     return DSCard(
       padding: const EdgeInsets.all(AppSpacing.xl),
       onTap: () {
@@ -257,7 +313,7 @@ class _IdentityCard extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  'А',
+                  firstLetter,
                   style: AppTextStyles.titleLarge.copyWith(
                     color: colors.primaryForeground,
                     fontSize: 22,
@@ -271,12 +327,12 @@ class _IdentityCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Демо пользователь',
+                      username,
                       style: AppTextStyles.titleMedium.copyWith(color: colors.foreground),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Участник',
+                      email,
                       style: AppTextStyles.caption.copyWith(color: colors.mutedForeground),
                     ),
                   ],
@@ -287,7 +343,7 @@ class _IdentityCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           BlocBuilder<LevelBloc, LevelState>(
             builder: (context, state) {
-              if (state is LevelLoaded) return _LevelRow(level: state.level);
+              if (state is LevelLoaded) return _LevelRow(level: state.level, userId: userId);
               return const _LevelPlaceholder();
             },
           ),
@@ -298,9 +354,10 @@ class _IdentityCard extends StatelessWidget {
 }
 
 class _LevelRow extends StatelessWidget {
-  const _LevelRow({required this.level});
+  const _LevelRow({required this.level, required this.userId});
 
   final UserLevel level;
+  final String userId;
 
   @override
   Widget build(BuildContext context) {
@@ -412,5 +469,17 @@ class _MenuItem extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _PendingInvitesSection extends StatelessWidget {
+  final String userId;
+
+  const _PendingInvitesSection({required this.userId});
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: реализовать список приглашений
+    return const SizedBox.shrink();
   }
 }

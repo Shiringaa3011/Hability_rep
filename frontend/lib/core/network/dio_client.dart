@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../constants/api_constants.dart';
+import 'auth_interceptor.dart';
 
 Dio createDioClient() {
   final dio = Dio(
@@ -22,6 +23,8 @@ Dio createDioClient() {
       error: true,
     ),
   );
+
+  dio.interceptors.add(AuthInterceptor());
 
   return dio;
 }
