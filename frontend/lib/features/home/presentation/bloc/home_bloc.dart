@@ -87,20 +87,27 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   }
 
   Future<void> _onToggle(HomeHabitToggled event, Emitter<HomeState> emit) async {
+    final oldHabits = state.habits;
+    
+    final updatedHabits = state.habits.map((h) {
+      if (h.id == event.habitId) {
+        return h.copyWith(completedToday: event.completed);
+      }
+      return h;
+    }).toList();
+    
+    emit(state.copyWith(habits: updatedHabits));
+    
     try {
-      await _toggle(
-        habitId: event.habitId,
-        day: state.selectedDay,
-        completed: event.completed,
-      );
-      final habits = await _getToday(
+      await _toggle(habitId: event.habitId, day: state.selectedDay, completed: event.completed);
+      final freshHabits = await _getToday(
         userId: userId,
         day: state.selectedDay,
         groupId: state.selectedGroupId,
       );
-      emit(state.copyWith(habits: habits, clearError: true));
+      emit(state.copyWith(habits: freshHabits));
     } catch (e) {
-      emit(state.copyWith(error: e.toString()));
+      emit(state.copyWith(habits: oldHabits, error: e.toString()));
     }
   }
 }
