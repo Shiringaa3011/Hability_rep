@@ -27,6 +27,7 @@ class UserStats extends Equatable {
     required this.maxStreak,
     required this.totalPointsEarned,
     required this.updatedAt,
+    this.missedCount = 0,
   });
 
   final String userId;
@@ -43,6 +44,8 @@ class UserStats extends Equatable {
 
   final int totalPointsEarned;
 
+  final int missedCount;
+
   final DateTime updatedAt;
 
   @override
@@ -54,12 +57,13 @@ class UserStats extends Equatable {
         currentStreak,
         maxStreak,
         totalPointsEarned,
+        missedCount,
         updatedAt,
       ];
 
   @override
   String toString() {
     return 'UserStats(userId: $userId, period: $period, totalCompletions: $totalCompletions, '
-        'completionRate: $completionRate%, currentStreak: $currentStreak)';
+        'completionRate: $completionRate%, currentStreak: $currentStreak, missed: $missedCount)';
   }
 }

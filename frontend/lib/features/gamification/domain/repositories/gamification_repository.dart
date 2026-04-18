@@ -3,6 +3,7 @@ import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
 import '../entities/achievement.dart';
 import '../entities/group_achievement.dart';
+import '../entities/group_stats.dart';
 import '../entities/habit_stats.dart';
 import '../entities/user_level.dart';
 import '../entities/user_stats.dart';
@@ -26,6 +27,11 @@ abstract class GamificationRepository {
 
   Future<Either<Failure, List<GroupAchievement>>> getGroupAchievements(
     String groupId,
+  );
+
+  Future<Either<Failure, GroupStats>> getGroupStats(
+    String groupId,
+    StatsPeriod period,
   );
 
   Future<Either<Failure, void>> refreshData(String userId);
