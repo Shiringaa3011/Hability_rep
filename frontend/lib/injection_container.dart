@@ -14,6 +14,7 @@ import 'features/gamification/domain/usecases/get_group_stats.dart';
 import 'features/gamification/domain/usecases/get_habits_stats.dart';
 import 'features/gamification/domain/usecases/get_user_level.dart';
 import 'features/gamification/domain/usecases/get_user_stats.dart';
+import 'features/gamification/domain/usecases/get_user_timeline.dart';
 import 'features/gamification/presentation/bloc/achievements/achievements_bloc.dart';
 import 'features/gamification/presentation/bloc/group_achievements/group_achievements_bloc.dart';
 import 'features/gamification/presentation/bloc/group_stats/group_stats_bloc.dart';
@@ -56,7 +57,8 @@ Future<void> init() async {
   sl.registerLazySingleton<HomeRepository>(
     () => HomeRepositoryImpl(sl(), sl<GamificationRemoteDataSource>()),
   );
-  sl.registerLazySingleton<NotificationsRepository>(() => NotificationsRepositoryImpl());
+  sl.registerLazySingleton<NotificationsRepository>(
+      () => NotificationsRepositoryImpl());
 
   sl.registerLazySingleton(() => GetUserGroups(sl()));
   sl.registerLazySingleton(() => GetGroupDetails(sl()));
@@ -90,6 +92,7 @@ Future<void> _initGamification() async {
       getUserStats: sl(),
       getHabitsStats: sl(),
       completeHabit: sl(),
+      getUserTimeline: sl(),
     ),
   );
 
@@ -111,6 +114,7 @@ Future<void> _initGamification() async {
   sl.registerLazySingleton(() => GetAchievements(sl()));
   sl.registerLazySingleton(() => GetGroupAchievements(sl()));
   sl.registerLazySingleton(() => GetGroupStats(sl()));
+  sl.registerLazySingleton(() => GetUserTimeline(sl()));
   sl.registerLazySingleton(() => CompleteHabit(sl()));
 
   sl.registerLazySingleton<GamificationRepository>(

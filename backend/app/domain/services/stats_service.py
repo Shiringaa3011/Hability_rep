@@ -10,6 +10,7 @@ from app.domain.models.stats import (
     GroupMemberStats,
     GroupStats,
     StatsPeriod,
+    TimelinePoint,
     UserStats as UserStatsEntity,
 )
 from app.infrastructure.database.models import GroupMemberModel, UserModel
@@ -291,3 +292,49 @@ class StatsService:
     ) -> float:
         stats = await self.get_user_stats(user_id, period)
         return stats.completion_rate if stats else 0.0
+
+    async def get_user_timeline(
+        self, user_id: UUID, period: StatsPeriod
+    ) -> List[TimelinePoint]:
+        if period == StatsPeriod.DAY:
+            raise ValueError("period 'day' is not supported for timeline")
+
+        buckets = self._build_timeline_buckets(period)
+        result: List[TimelinePoint] = []
+        for label, start, end in buckets:
+            completions = await self.completion_repo.get_by_user(user_id, start, end)
+            points = sum(c.points_earned for c in completions)  # type: ignore[misc]
+            result.append(TimelinePoint(date=label, points=points))
+        return result
+
+    def _build_timeline_buckets(
+        self, period: StatsPeriod
+    ) -> List[Tuple[str, datetime, datetime]]:
+        if period == StatsPeriod.DAY:
+            raise ValueError("period 'day' is not supported for timeline")
+
+        today = date.today()
+        if period == StatsPeriod.WEEK:
+            return self._build_week_buckets(today)
+        return self._build_month_buckets(today)
+
+    @staticmethod
+    def _build_week_buckets(today: date) -> List[Tuple[str, datetime, datetime]]:
+        buckets = []
+        for days_ago in range(6, -1, -1):
+            day = today - timedelta(days=days_ago)
+            start = datetime.combine(day, datetime.min.time())
+            end = datetime.combine(day, datetime.max.time())
+            buckets.append((day.isoformat(), start, end))
+        return buckets
+
+    @staticmethod
+    def _build_month_buckets(today: date) -> List[Tuple[str, datetime, datetime]]:
+        buckets = []
+        for i in range(4, -1, -1):
+            bucket_end_day = today - timedelta(days=7 * i)
+            bucket_start_day = today - timedelta(days=7 * i + 6)
+            start = datetime.combine(bucket_start_day, datetime.min.time())
+            end = datetime.combine(bucket_end_day, datetime.max.time())
+            buckets.append((bucket_start_day.isoformat(), start, end))
+        return buckets

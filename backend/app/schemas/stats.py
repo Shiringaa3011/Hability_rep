@@ -78,3 +78,16 @@ class GroupStatsResponse(BaseModel):
     )
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class TimelinePointResponse(BaseModel):
+    date: str = Field(..., description="ISO date YYYY-MM-DD")
+    points: int = Field(..., ge=0, description="Total points earned in this bucket")
+
+
+class UserTimelineResponse(BaseModel):
+    user_id: UUID
+    period: StatsPeriod
+    timeline: List[TimelinePointResponse] = Field(
+        ..., description="Chronologically ordered timeline buckets"
+    )
