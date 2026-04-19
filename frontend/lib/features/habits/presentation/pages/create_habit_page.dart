@@ -105,10 +105,12 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
       scheduledTimeLabel: _fmt(_time),
       frequencyLabel: _frequency == 'daily' ? 'Ежедневно' : 'Еженедельно',
       groupId: _selectedGroupId,
-      groupName: _groups.firstWhere(
-        (g) => g.id == _selectedGroupId,
-        orElse: () => GroupEntity(id: '', name: '', createdBy: '', createdAt: DateTime.now()),
-      ).name,
+      groupName: _selectedGroupId != null
+          ? _groups.firstWhere(
+              (g) => g.id == _selectedGroupId,
+              orElse: () => GroupEntity(id: '', name: '', createdBy: '', createdAt: DateTime.now()),
+            ).name
+          : null,
       remindersEnabled: _reminders,
       reminderTimeLabel: _reminders ? _fmt(_reminderTime) : null,
       dayOfWeek: _frequency == 'weekly' ? _selectedWeekday : null,
@@ -121,6 +123,8 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    
     if (_loading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -156,7 +160,13 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
               maxLines: 3,
             ),
             const SizedBox(height: 16),
-            const Text('Периодичность', style: TextStyle(fontWeight: FontWeight.w500)),
+            Text(
+              'Периодичность',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: colors.foreground,
+              ),
+            ),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -179,7 +189,13 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
             ),
             const SizedBox(height: 16),
             if (_frequency == 'weekly') ...[
-              const Text('День недели', style: TextStyle(fontWeight: FontWeight.w500)),
+              Text(
+                'День недели',
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  color: colors.foreground,
+                ),
+              ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -220,7 +236,10 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
                         if (!isAvailable)
                           Text(
                             'лимит 5 привычек',
-                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: colors.mutedForeground,
+                            ),
                           ),
                       ],
                     ),
@@ -234,7 +253,12 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
               },
             ),
             const SizedBox(height: 16),
-            Text('Напоминания', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Напоминания',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: colors.foreground,
+              ),
+            ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Уведомления для этой привычки'),
@@ -267,19 +291,20 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
+    final colors = context.appColors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade200,
+          color: isSelected ? colors.primary : colors.muted,
           borderRadius: BorderRadius.circular(30),
         ),
         child: Center(
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? Colors.white : Colors.black87,
+              color: isSelected ? colors.primaryForeground : colors.foreground,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -289,6 +314,7 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
   }
 
   List<Widget> _buildWeekdayButtons() {
+    final colors = context.appColors;
     return List.generate(7, (index) {
       final weekdayValue = index + 1;
       final isSelected = _selectedWeekday == weekdayValue;
@@ -300,14 +326,14 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade200,
+            color: isSelected ? colors.primary : colors.muted,
             borderRadius: BorderRadius.circular(30),
           ),
           child: Center(
             child: Text(
               shortName,
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.black87,
+                color: isSelected ? colors.primaryForeground : colors.foreground,
                 fontWeight: FontWeight.w500,
               ),
             ),

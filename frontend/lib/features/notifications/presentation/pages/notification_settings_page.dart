@@ -10,6 +10,8 @@ class _NotificationSettingsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    
     return Scaffold(
       appBar: AppBar(title: const Text('Уведомления')),
       body: BlocBuilder<NotificationSettingsCubit, NotificationSettingsSnapshot>(
@@ -24,24 +26,41 @@ class _NotificationSettingsView extends StatelessWidget {
                 subtitle: const Text('Глобальный переключатель доставки push и in-app'),
                 value: s.allowNotifications,
                 onChanged: (v) => context.read<NotificationSettingsCubit>().setAllow(v),
+                activeColor: colors.primary,
               ),
               SwitchListTile(
-                title: Text('Звук', style: TextStyle(color: isEnabled ? null : Colors.grey)),
-                subtitle: Text('Звуковой сигнал при получении', style: TextStyle(color: isEnabled ? null : Colors.grey)),
+                title: Text(
+                  'Звук',
+                  style: TextStyle(color: isEnabled ? colors.foreground : colors.mutedForeground),
+                ),
+                subtitle: Text(
+                  'Звуковой сигнал при получении',
+                  style: TextStyle(color: isEnabled ? colors.mutedForeground : colors.mutedForeground.withValues(alpha: 0.5)),
+                ),
                 value: s.soundEnabled,
-                onChanged: isEnabled ? (v) => context.read<NotificationSettingsCubit>().setSound(v) : null,
-                activeColor: Colors.blue,
-                inactiveThumbColor: Colors.grey,
-                inactiveTrackColor: Colors.grey.shade300,
+                onChanged: isEnabled
+                    ? (v) => context.read<NotificationSettingsCubit>().setSound(v)
+                    : null,
+                activeColor: colors.primary,
+                inactiveThumbColor: colors.mutedForeground,
+                inactiveTrackColor: colors.muted,
               ),
               SwitchListTile(
-                title: Text('Вибрация', style: TextStyle(color: isEnabled ? null : Colors.grey)),
-                subtitle: Text('Тактильный отклик при получении', style: TextStyle(color: isEnabled ? null : Colors.grey)),
+                title: Text(
+                  'Вибрация',
+                  style: TextStyle(color: isEnabled ? colors.foreground : colors.mutedForeground),
+                ),
+                subtitle: Text(
+                  'Тактильный отклик при получении',
+                  style: TextStyle(color: isEnabled ? colors.mutedForeground : colors.mutedForeground.withValues(alpha: 0.5)),
+                ),
                 value: s.vibrationEnabled,
-                onChanged: isEnabled ? (v) => context.read<NotificationSettingsCubit>().setVibration(v) : null,
-                activeColor: Colors.blue,
-                inactiveThumbColor: Colors.grey,
-                inactiveTrackColor: Colors.grey.shade300,
+                onChanged: isEnabled
+                    ? (v) => context.read<NotificationSettingsCubit>().setVibration(v)
+                    : null,
+                activeColor: colors.primary,
+                inactiveThumbColor: colors.mutedForeground,
+                inactiveTrackColor: colors.muted,
               ),
             ],
           );

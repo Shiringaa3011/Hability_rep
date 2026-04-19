@@ -44,6 +44,7 @@ async def get_day_habits(
     stmt = select(HabitModel).where(
         HabitModel.user_id == user_id,
         HabitModel.is_active == True,
+        func.date(HabitModel.created_at) <= day,
         (HabitModel.frequency == 'daily') | 
         (HabitModel.frequency == 'weekly') & (HabitModel.day_of_week == weekday)
     )
@@ -230,3 +231,18 @@ async def toggle_completion(
         await db.flush()
     elif (not request.completed) and existing is not None:
         await db.delete(existing)
+
+@router.delete("/{habit_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def deactivate_habit(
+    habit_id: UUID,
+    user_id: UUID = Query(...),
+    db: AsyncSession = Depends(get_db),
+):
+    habit = await db.get(HabitModel, habit_id)
+    if not habit:
+        raise HTTPException(status_code=404, detail="Habit not found")
+    if habit.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    habit.is_active = False
+    await db.flush()

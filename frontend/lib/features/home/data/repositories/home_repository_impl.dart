@@ -120,6 +120,11 @@ class HomeRepositoryImpl implements HomeRepository {
       'reminders_enabled': habit.remindersEnabled,
       'reminder_time': habit.reminderTimeLabel,
     };
+
+    if (frequency == 'weekly' && habit.dayOfWeek != null) {
+      payload['day_of_week'] = habit.dayOfWeek;
+    }
+    
     if (habit.id.startsWith('h_')) {
       await dio.post(ApiConstants.habitsPath, data: payload);
     } else {
@@ -129,6 +134,9 @@ class HomeRepositoryImpl implements HomeRepository {
 
   @override
   Future<void> deleteHabit(String habitId, String userId) async {
-    await dio.delete('${ApiConstants.habitsPath}/$habitId', data: {'user_id': userId});
+    await dio.delete(
+      '${ApiConstants.habitsPath}/$habitId',
+      queryParameters: {'user_id': userId},
+    );
   }
 }
