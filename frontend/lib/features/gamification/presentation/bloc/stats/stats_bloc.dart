@@ -23,6 +23,8 @@ class StatsBloc extends Bloc<StatsEvent, StatsState> {
   final GetHabitsStats getHabitsStats;
   final CompleteHabit completeHabit;
 
+  StatsPeriod currentPeriod = StatsPeriod.week;
+
   Future<void> _onLoadStats(LoadStats event, Emitter<StatsState> emit) async {
     emit(const StatsLoading());
 
@@ -57,6 +59,7 @@ class StatsBloc extends Bloc<StatsEvent, StatsState> {
     StatsPeriod period,
     Emitter<StatsState> emit,
   ) async {
+    currentPeriod = period;
     final statsResult = await getUserStats(
       GetUserStatsParams(userId: userId, period: period),
     );

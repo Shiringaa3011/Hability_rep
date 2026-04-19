@@ -53,7 +53,9 @@ Future<void> init() async {
   sl.registerLazySingleton<HiveInterface>(() => Hive);
 
   sl.registerLazySingleton<GroupRepository>(() => GroupRepositoryImpl());
-  sl.registerLazySingleton<HomeRepository>(() => HomeRepositoryImpl(sl()));
+  sl.registerLazySingleton<HomeRepository>(
+    () => HomeRepositoryImpl(sl(), sl<GamificationRemoteDataSource>()),
+  );
   sl.registerLazySingleton<NotificationsRepository>(() => NotificationsRepositoryImpl());
 
   sl.registerLazySingleton(() => GetUserGroups(sl()));

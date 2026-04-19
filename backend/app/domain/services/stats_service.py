@@ -43,10 +43,11 @@ class StatsService:
         total_completions = len(completions)
 
         expected_completions = self._calculate_expected_completions(habits, period)
-        completion_rate = (
+        completion_rate = min(
             (total_completions / expected_completions * 100)
             if expected_completions > 0
-            else 0
+            else 0,
+            100.0,
         )
         missed_count = max(0, expected_completions - total_completions)
 
@@ -103,10 +104,11 @@ class StatsService:
         )
 
         expected_completions = self._calculate_expected_completions([habit], period)
-        completion_rate = (
+        completion_rate = min(
             (total_completions / expected_completions * 100)
             if expected_completions > 0
-            else 0
+            else 0,
+            100.0,
         )
         missed_count = max(0, expected_completions - total_completions)
 

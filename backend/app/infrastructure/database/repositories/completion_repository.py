@@ -72,7 +72,7 @@ class CompletionRepository(BaseRepository[HabitCompletionModel]):
                 and_(
                     HabitCompletionModel.habit_id == habit_id,
                     HabitCompletionModel.user_id == user_id,
-                    func.date(HabitCompletionModel.completed_at) == completion_date,
+                    HabitCompletionModel.completion_date == completion_date,
                 )
             )
         )
