@@ -1,0 +1,199 @@
+import 'package:flutter/material.dart';
+
+import '../../../home/domain/entities/today_habit_entity.dart';
+import '../../../home/domain/repositories/home_repository.dart';
+import '../../../home/domain/usecases/get_home_group_filter_options.dart';
+import '../../../home/domain/usecases/upsert_habit_definition.dart';
+import '../../../../injection_container.dart' as di;
+
+class CreateHabitPage extends StatefulWidget {
+  final String userId;
+
+  const CreateHabitPage({required this.userId, super.key});
+
+  @override
+  State<CreateHabitPage> createState() => _CreateHabitPageState();
+}
+
+class _CreateHabitPageState extends State<CreateHabitPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _title = TextEditingController();
+  final _description = TextEditingController();
+  String _frequency = 'Ежедневно';
+  TimeOfDay? _time;
+  String? _groupId;
+  String? _groupName;
+  List<HomeGroupFilterOption> _groups = const [];
+  bool _reminders = false;
+  TimeOfDay? _reminderTime;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGroups();
+  }
+
+  Future<void> _loadGroups() async {
+    final list = await di.sl<GetHomeGroupFilterOptions>()(widget.userId);
+    if (!mounted) return;
+    setState(() {
+      _groups = list.where((g) => g.groupId != null).toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _description.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickMainTime() async {
+    final t = await showTimePicker(
+      context: context,
+      initialTime: _time ?? TimeOfDay.now(),
+    );
+    if (t != null) setState(() => _time = t);
+  }
+
+  Future<void> _pickReminderTime() async {
+    final t = await showTimePicker(
+      context: context,
+      initialTime: _reminderTime ?? TimeOfDay.now(),
+    );
+    if (t != null) setState(() => _reminderTime = t);
+  }
+
+  String? _fmt(TimeOfDay? t) =>
+      t == null ? null : '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+
+  Future<void> _save() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final id = 'h_${DateTime.now().millisecondsSinceEpoch}';
+    final habit = TodayHabitEntity(
+      id: id,
+      title: _title.text.trim(),
+      description: _description.text.trim().isEmpty ? null : _description.text.trim(),
+      scheduledTimeLabel: _fmt(_time),
+      frequencyLabel: _frequency,
+      groupId: _groupId,
+      groupName: _groupName,
+      remindersEnabled: _reminders,
+      reminderTimeLabel: _reminders ? _fmt(_reminderTime) : null,
+    );
+    await di.sl<UpsertHabitDefinition>()(habit);
+    if (!mounted) return;
+    Navigator.of(context).pop(true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final canSave = _title.text.trim().isNotEmpty;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Новая привычка')),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            TextFormField(
+              controller: _title,
+              decoration: const InputDecoration(
+                labelText: 'Название *',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (_) => setState(() {}),
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Введите название' : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _description,
+              decoration: const InputDecoration(
+                labelText: 'Описание',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 3,
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              value: _frequency,
+              decoration: const InputDecoration(
+                labelText: 'Периодичность',
+                border: OutlineInputBorder(),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'Ежедневно', child: Text('Ежедневно')),
+                DropdownMenuItem(value: 'Еженедельно', child: Text('Еженедельно')),
+              ],
+              onChanged: (v) => setState(() => _frequency = v ?? 'Ежедневно'),
+            ),
+            const SizedBox(height: 12),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Время выполнения'),
+              subtitle: Text(_fmt(_time) ?? 'Не задано'),
+              trailing: IconButton(
+                icon: const Icon(Icons.schedule),
+                onPressed: _pickMainTime,
+              ),
+            ),
+            DropdownButtonFormField<String?>(
+              value: _groupId,
+              decoration: const InputDecoration(
+                labelText: 'Группа',
+                border: OutlineInputBorder(),
+              ),
+              items: [
+                const DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text('Личная привычка'),
+                ),
+                ..._groups.map(
+                  (g) => DropdownMenuItem<String?>(
+                    value: g.groupId,
+                    child: Text(g.title),
+                  ),
+                ),
+              ],
+              onChanged: (gid) {
+                setState(() {
+                  _groupId = gid;
+                  if (gid == null) {
+                    _groupName = 'Личное';
+                  } else {
+                    final match = _groups.where((e) => e.groupId == gid);
+                    _groupName = match.isEmpty ? 'Группа' : match.first.title;
+                  }
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+            Text('Напоминания', style: Theme.of(context).textTheme.titleMedium),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Включить напоминания'),
+              value: _reminders,
+              onChanged: (v) => setState(() => _reminders = v),
+            ),
+            if (_reminders)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Время напоминания'),
+                subtitle: Text(_fmt(_reminderTime) ?? 'Не выбрано'),
+                trailing: IconButton(
+                  icon: const Icon(Icons.alarm),
+                  onPressed: _pickReminderTime,
+                ),
+              ),
+            const SizedBox(height: 24),
+            FilledButton(
+              onPressed: canSave ? _save : null,
+              child: const Text('Создать привычку'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
