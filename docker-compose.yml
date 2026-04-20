@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_USER: habitly
       POSTGRES_PASSWORD: habitly
-      POSTGRES_DB: habitly_db
+      POSTGRES_DB: habitly
     ports:
       - "5432:5432"
     volumes:
@@ -26,7 +26,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql+asyncpg://habitly:habitly@postgres:5432/habitly_db
+      DATABASE_URL: postgresql+asyncpg://habitly:habitly@postgres:5432/habitly
       DEBUG: "True"
     depends_on:
       postgres:
