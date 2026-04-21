@@ -1,0 +1,147 @@
+syntax = "proto3";
+
+package habitly.v1;
+
+option py_generic_services = true;
+
+import "google/protobuf/timestamp.proto";
+
+// ---- СЕРВИС (все RPC-методы) ----
+service HabitlyService {
+    // Регистрация нового пользователя
+    rpc Register(RegisterRequest) returns (RegisterResponse);
+    
+    // Аутентификация (логин)
+    rpc Login(LoginRequest) returns (LoginResponse);
+    
+    // Выход
+    rpc Logout(LogoutRequest) returns (LogoutResponse);
+    
+    // Создание привычки
+    rpc CreateHabit(CreateHabitRequest) returns (Habit);
+    
+    // Получение списка всех привычек пользователя
+    rpc ListHabits(ListHabitsRequest) returns (ListHabitsResponse);
+    
+    // Получение информации об одной привычке по ID
+    rpc GetHabit(GetHabitRequest) returns (Habit);
+    
+    // Обновление привычки (название, описание, цель)
+    rpc UpdateHabit(UpdateHabitRequest) returns (Habit);
+    
+    // Удаление привычки
+    rpc DeleteHabit(DeleteHabitRequest) returns (DeleteHabitResponse);
+    
+    // Отметка выполнения привычки за сегодня (или конкретную дату)
+    rpc CompleteHabit(CompleteHabitRequest) returns (CompleteHabitResponse);
+    
+    // Получение статистики выполнения за последние 7 дней
+    rpc GetStatistics(GetStatisticsRequest) returns (GetStatisticsResponse);
+}
+
+// ---- СООБЩЕНИЯ ДЛЯ ПОЛЬЗОВАТЕЛЕЙ ----
+message RegisterRequest {
+    string username = 1;   // уникальное имя пользователя
+    string email = 2;      // уникальный email
+    string password = 3;
+
+message RegisterResponse {
+    bool success = 1;
+    string user_id = 2;    // UUID пользователя
+    string message = 3;    // сообщение об ошибке или успехе
+}
+
+message LoginRequest {
+    string email = 1;
+    string password = 2;
+}
+
+message LoginResponse {
+    bool success = 1;
+    string token = 2;
+    string user_id = 3;
+    string message = 4;
+}
+
+message LogoutRequest {
+    string token = 1;      // токен, который нужно инвалидировать
+}
+
+message LogoutResponse {
+    bool success = 1;
+}
+
+// ---- СООБЩЕНИЯ ДЛЯ ПРИВЫЧЕК ----
+message Habit {
+    string habit_id = 1;
+    string user_id = 2;            // владелец
+    string title = 3;
+    string description = 4;
+    int32 target_days_per_week = 5; // цель: сколько дней в неделю выполнять
+    google.protobuf.Timestamp created_at = 6;
+    google.protobuf.Timestamp updated_at = 7;
+}
+
+message CreateHabitRequest {
+    string title = 1;
+    string description = 2;
+    int32 target_days_per_week = 3;
+}
+
+message ListHabitsRequest {
+}
+
+message ListHabitsResponse {
+    repeated Habit habits = 1;
+}
+
+message GetHabitRequest {
+    string habit_id = 1;
+}
+
+message UpdateHabitRequest {
+    string habit_id = 1;
+    string title = 2;
+    string description = 3;
+    int32 target_days_per_week = 4;
+}
+
+message DeleteHabitRequest {
+    string habit_id = 1;
+}
+
+message DeleteHabitResponse {
+    bool success = 1;
+}
+
+// ---- СООБЩЕНИЯ ДЛЯ ВЫПОЛНЕНИЯ ПРИВЫЧЕК ----
+message CompleteHabitRequest {
+    string habit_id = 1;
+}
+
+message CompleteHabitResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+// ---- СООБЩЕНИЯ ДЛЯ СТАТИСТИКИ ----
+message GetStatisticsRequest {
+    string habit_id = 1;
+}
+
+message DailyStat {
+    string date = 1;         // формат "YYYY-MM-DD"
+    bool completed = 2;      // выполнена ли привычка в этот день
+}
+
+message HabitStatistics {
+    string habit_id = 1;
+    string habit_title = 2;
+    int32 total_completed = 3;       // всего выполнений за 7 дней
+    double completion_rate = 4;      // процент
+    repeated DailyStat daily_stats = 5;
+}
+
+message GetStatisticsResponse {
+    repeated HabitStatistics stats = 1;  // статистика по каждой привычке
+}
