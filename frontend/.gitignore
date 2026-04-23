@@ -26,3 +26,5 @@ app.*.map.json
 
 .idea
 .dart_tool
+.metadata
+*.iml
