@@ -64,6 +64,7 @@ class GamificationService:
             habit_id=habit_id,
             user_id=user_id,
             completed_at=datetime.combine(completion_date, datetime.now().time()),
+            completion_date=completion_date,
             points_earned=points_earned,
             current_streak=current_streak,
         )

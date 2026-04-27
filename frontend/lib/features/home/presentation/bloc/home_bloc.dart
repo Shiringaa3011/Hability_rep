@@ -90,6 +90,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     try {
       await _toggle(
         habitId: event.habitId,
+        userId: userId,
         day: state.selectedDay,
         completed: event.completed,
       );

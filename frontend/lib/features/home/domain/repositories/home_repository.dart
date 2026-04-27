@@ -18,6 +18,7 @@ abstract class HomeRepository {
 
   Future<void> setHabitCompletedForDay({
     required String habitId,
+    required String userId,
     required DateTime day,
     required bool completed,
   });

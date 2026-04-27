@@ -6,6 +6,7 @@ import '../../domain/entities/achievement.dart';
 import '../../domain/entities/group_achievement.dart';
 import '../../domain/entities/group_stats.dart';
 import '../../domain/entities/habit_stats.dart';
+import '../../domain/entities/timeline_point.dart';
 import '../../domain/entities/user_level.dart';
 import '../../domain/entities/user_stats.dart';
 import '../../domain/repositories/gamification_repository.dart';
@@ -25,7 +26,7 @@ class GamificationRepositoryImpl implements GamificationRepository {
   Future<Either<Failure, UserLevel>> getUserLevel(String userId) async {
     try {
       final cachedLevel = await localDataSource.getCachedUserLevel(userId);
-      
+
       try {
         final remoteLevel = await remoteDataSource.getUserLevel(userId);
         await localDataSource.cacheUserLevel(remoteLevel);
@@ -53,8 +54,9 @@ class GamificationRepositoryImpl implements GamificationRepository {
     StatsPeriod period,
   ) async {
     try {
-      final cachedStats = await localDataSource.getCachedUserStats(userId, period);
-      
+      final cachedStats =
+          await localDataSource.getCachedUserStats(userId, period);
+
       try {
         final remoteStats = await remoteDataSource.getUserStats(userId, period);
         await localDataSource.cacheUserStats(remoteStats);
@@ -82,7 +84,8 @@ class GamificationRepositoryImpl implements GamificationRepository {
     StatsPeriod period,
   ) async {
     try {
-      final remoteStats = await remoteDataSource.getUserHabitsStats(userId, period);
+      final remoteStats =
+          await remoteDataSource.getUserHabitsStats(userId, period);
       return Right(remoteStats.map((model) => model.toEntity()).toList());
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -94,17 +97,22 @@ class GamificationRepositoryImpl implements GamificationRepository {
   }
 
   @override
-  Future<Either<Failure, List<Achievement>>> getAchievements(String userId) async {
+  Future<Either<Failure, List<Achievement>>> getAchievements(
+      String userId) async {
     try {
-      final cachedAchievements = await localDataSource.getCachedAchievements(userId);
-      
+      final cachedAchievements =
+          await localDataSource.getCachedAchievements(userId);
+
       try {
-        final remoteAchievements = await remoteDataSource.getAchievements(userId);
+        final remoteAchievements =
+            await remoteDataSource.getAchievements(userId);
         await localDataSource.cacheAchievements(userId, remoteAchievements);
-        return Right(remoteAchievements.map((model) => model.toEntity()).toList());
+        return Right(
+            remoteAchievements.map((model) => model.toEntity()).toList());
       } catch (e) {
         if (cachedAchievements != null) {
-          return Right(cachedAchievements.map((model) => model.toEntity()).toList());
+          return Right(
+              cachedAchievements.map((model) => model.toEntity()).toList());
         }
         rethrow;
       }
@@ -125,7 +133,8 @@ class GamificationRepositoryImpl implements GamificationRepository {
     String userId,
   ) async {
     try {
-      final newAchievements = await remoteDataSource.completeHabit(habitId, userId);
+      final newAchievements =
+          await remoteDataSource.completeHabit(habitId, userId);
       return Right(newAchievements);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -195,6 +204,23 @@ class GamificationRepositoryImpl implements GamificationRepository {
       return Left(NetworkFailure(e.message));
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Unexpected error: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<TimelinePoint>>> getUserTimeline(
+    String userId,
+    StatsPeriod period,
+  ) async {
+    try {
+      final models = await remoteDataSource.getUserTimeline(userId, period);
+      return Right(models.map((m) => m.toEntity()).toList());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
     } catch (e) {
       return Left(ServerFailure('Unexpected error: $e'));
     }

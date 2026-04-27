@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'core/design_system/design_system.dart';
 import 'core/theme/theme_mode_controller.dart';
+import 'features/gamification/domain/entities/user_stats.dart';
+import 'features/gamification/presentation/bloc/stats/stats_bloc.dart';
+import 'features/gamification/presentation/bloc/stats/stats_event.dart';
 import 'features/gamification/presentation/pages/achievements_page.dart';
 import 'features/gamification/presentation/pages/stats_page.dart';
 import 'features/groups/presentation/pages/groups_page.dart';
@@ -16,6 +21,8 @@ void main() async {
   await Hive.initFlutter();
 
   await ThemeModeController.init();
+
+  await initializeDateFormatting('ru');
 
   await di.init();
 
@@ -35,7 +42,16 @@ class HabitlyApp extends StatelessWidget {
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
         themeMode: ThemeModeController.instance.value,
-        home: const _MainShell(),
+        home: BlocProvider(
+          create: (_) => di.sl<StatsBloc>()
+            ..add(
+              LoadStats(
+                userId: _MainShell.mockUserId,
+                period: StatsPeriod.week,
+              ),
+            ),
+          child: const _MainShell(),
+        ),
       ),
     );
   }
@@ -52,6 +68,16 @@ class _MainShell extends StatefulWidget {
 
 class _MainShellState extends State<_MainShell> {
   int _index = 0;
+
+  void _onTabTap(int i) {
+    if (i == 1) {
+      final bloc = context.read<StatsBloc>();
+      bloc.add(
+        RefreshStats(userId: _MainShell.mockUserId, period: bloc.currentPeriod),
+      );
+    }
+    setState(() => _index = i);
+  }
 
   static const List<DSBottomNavItem> _navItems = [
     DSBottomNavItem(
@@ -97,7 +123,7 @@ class _MainShellState extends State<_MainShell> {
       bottomNavigationBar: DSBottomNav(
         items: _navItems,
         currentIndex: _index,
-        onTap: (i) => setState(() => _index = i),
+        onTap: _onTabTap,
       ),
     );
   }

@@ -3,6 +3,7 @@ import uuid
 from sqlalchemy import (
     Boolean,
     Column,
+    Date,
     DateTime,
     Enum as SQLEnum,
     Float,
@@ -13,7 +14,6 @@ from sqlalchemy import (
     Text,
     TypeDecorator,
     UniqueConstraint,
-    text,
 )
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from sqlalchemy.orm import relationship
@@ -152,6 +152,7 @@ class HabitCompletionModel(Base):
     completed_at = Column(
         DateTime(timezone=True), nullable=False, server_default=func.now(), index=True
     )
+    completion_date = Column(Date, nullable=False)
     points_earned = Column(Integer, nullable=False)
     current_streak = Column(Integer, nullable=False, default=1)
 
@@ -160,13 +161,7 @@ class HabitCompletionModel(Base):
 
     __table_args__ = (
         Index("ix_completions_habit_date", "habit_id", "completed_at"),
-        Index(
-            "uq_completion_per_day",
-            "habit_id",
-            "user_id",
-            func.date(text("completed_at")),
-            unique=True,
-        ),
+        Index("uq_completion_per_day", "habit_id", "user_id", "completion_date", unique=True),
     )
 
     def __repr__(self):

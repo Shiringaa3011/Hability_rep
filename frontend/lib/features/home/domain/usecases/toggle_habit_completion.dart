@@ -7,11 +7,13 @@ class ToggleHabitCompletion {
 
   Future<void> call({
     required String habitId,
+    required String userId,
     required DateTime day,
     required bool completed,
   }) =>
       _repository.setHabitCompletedForDay(
         habitId: habitId,
+        userId: userId,
         day: day,
         completed: completed,
       );

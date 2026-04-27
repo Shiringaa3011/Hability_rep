@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../../domain/entities/achievement.dart';
 import '../../../domain/entities/habit_stats.dart';
+import '../../../domain/entities/timeline_point.dart';
 import '../../../domain/entities/user_stats.dart';
 
 abstract class StatsState extends Equatable {
@@ -23,13 +24,15 @@ class StatsLoaded extends StatsState {
   const StatsLoaded({
     required this.stats,
     required this.habitsStats,
+    this.timeline = const [],
   });
 
   final UserStats stats;
   final List<HabitStats> habitsStats;
+  final List<TimelinePoint> timeline;
 
   @override
-  List<Object?> get props => [stats, habitsStats];
+  List<Object?> get props => [stats, habitsStats, timeline];
 }
 
 class StatsError extends StatsState {

@@ -1,17 +1,20 @@
+import '../../../../core/error/exceptions.dart';
 import '../../domain/entities/today_habit_entity.dart';
 import '../../domain/repositories/home_repository.dart';
+import '../../../gamification/data/datasources/gamification_remote_datasource.dart';
 import '../../../groups/domain/repositories/group_repository.dart';
 
 // локальное хранилище привычек на главном экране + фильтр групп из GroupRepository
-// сетевые вызовы заменены задержками; данные живут в памяти процесса
+// данные живут в памяти процесса; выполнение привычки пишется в реальный API
 class HomeRepositoryImpl implements HomeRepository {
-  HomeRepositoryImpl(this._groups);
+  HomeRepositoryImpl(this._groups, this._gamification);
 
   final GroupRepository _groups;
+  final GamificationRemoteDataSource _gamification;
 
   final List<TodayHabitEntity> _catalog = [
     TodayHabitEntity(
-      id: 'h1',
+      id: '00000000-0000-0000-0000-000000000002',
       title: 'Утренняя зарядка',
       description: '10 минут разминки',
       scheduledTimeLabel: '08:00',
@@ -22,7 +25,7 @@ class HomeRepositoryImpl implements HomeRepository {
       reminderTimeLabel: '07:45',
     ),
     TodayHabitEntity(
-      id: 'h2',
+      id: '00000000-0000-0000-0000-000000000003',
       title: 'Стакан воды после пробуждения',
       description: null,
       scheduledTimeLabel: '08:10',
@@ -32,7 +35,7 @@ class HomeRepositoryImpl implements HomeRepository {
       remindersEnabled: false,
     ),
     TodayHabitEntity(
-      id: 'h3',
+      id: '00000000-0000-0000-0000-000000000004',
       title: 'Чтение 20 минут',
       description: 'Книга или статьи',
       scheduledTimeLabel: '21:00',
@@ -43,7 +46,7 @@ class HomeRepositoryImpl implements HomeRepository {
       reminderTimeLabel: '20:30',
     ),
     TodayHabitEntity(
-      id: 'h4',
+      id: '00000000-0000-0000-0000-000000000005',
       title: 'Медитация',
       description: null,
       scheduledTimeLabel: '07:30',
@@ -53,7 +56,7 @@ class HomeRepositoryImpl implements HomeRepository {
       remindersEnabled: false,
     ),
     TodayHabitEntity(
-      id: 'h5',
+      id: '00000000-0000-0000-0000-000000000006',
       title: 'Прогулка 6000 шагов',
       description: null,
       scheduledTimeLabel: null,
@@ -116,13 +119,20 @@ class HomeRepositoryImpl implements HomeRepository {
   @override
   Future<void> setHabitCompletedForDay({
     required String habitId,
+    required String userId,
     required DateTime day,
     required bool completed,
   }) async {
-    await Future<void>.delayed(const Duration(milliseconds: 120));
     final k = '${habitId}|${_dayKey(day)}';
     if (completed) {
-      _completedKeys.add(k);
+      if (!_completedKeys.contains(k)) {
+        try {
+          await _gamification.completeHabit(habitId, userId);
+        } on ServerException catch (e) {
+          if (!e.message.contains('already completed')) rethrow;
+        }
+        _completedKeys.add(k);
+      }
     } else {
       _completedKeys.remove(k);
     }

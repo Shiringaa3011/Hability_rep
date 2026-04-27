@@ -54,3 +54,9 @@ class GroupStats:
     average_completion_rate: float = 0.0
     total_completions: int = 0
     active_members_count: int = 0
+
+
+@dataclass
+class TimelinePoint:
+    date: str  # "YYYY-MM-DD"
+    points: int
