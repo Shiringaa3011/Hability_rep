@@ -67,6 +67,7 @@ class UserModel(Base):
     password_hash = Column(String(255), nullable=False, default="")
     total_points = Column(Integer, nullable=False, default=0)
     current_level = Column(Integer, nullable=False, default=0)
+    fcm_token = Column(String(255), nullable=True)
     created_at = Column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

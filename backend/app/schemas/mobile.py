@@ -138,3 +138,6 @@ class RegisterResponse(BaseModel):
     username: str
     email: str
 
+class FcmTokenRequest(BaseModel):
+    user_id: UUID
+    fcm_token: str
