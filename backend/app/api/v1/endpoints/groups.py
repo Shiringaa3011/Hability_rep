@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from app.infrastructure.services.fcm_service import send_push_notification
 from app.core.database import get_db
 from app.infrastructure.database.models import (
     EarnedGroupAchievementModel,
@@ -287,6 +287,12 @@ async def create_invite(
     )
     await db.flush()
     inviter = await db.get(UserModel, request.from_user_id)
+    if invited_user.fcm_token:
+        await send_push_notification(
+            device_token=invited_user.fcm_token,
+            title="Приглашение в группу",
+            body=f"{inviter.username if inviter else 'Пользователь'} приглашает вас в группу «{group.name}»",
+        )
     return GroupInviteResponse(
         id=invite.id,
         group_id=invite.group_id,

@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -35,3 +35,20 @@ async def register_user(request: RegisterRequest, db: AsyncSession = Depends(get
     await db.flush()
     await db.refresh(user)
     return RegisterResponse(user_id=user.id, username=user.username, email=user.email)
+
+@router.get("/search")
+async def search_users(
+    q: str = Query(..., min_length=1),
+    limit: int = Query(default=5, le=10),
+    db: AsyncSession = Depends(get_db),
+):
+    stmt = (
+        select(UserModel)
+        .where(UserModel.username.ilike(f"{q}%"))
+        .limit(limit)
+    )
+    users = (await db.execute(stmt)).scalars().all()
+    return [
+        {"user_id": str(u.id), "username": u.username}
+        for u in users
+    ]

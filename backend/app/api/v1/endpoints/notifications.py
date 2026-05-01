@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.infrastructure.services.fcm_service import send_push_notification
 
 from app.core.database import get_db
 from app.infrastructure.database.models import (
@@ -17,6 +18,7 @@ from app.schemas.mobile import (
     NotificationSendRequest,
     NotificationSettingsResponse,
     NotificationSettingsUpdateRequest,
+    FcmTokenRequest
 )
 
 router = APIRouter()
@@ -123,6 +125,13 @@ async def send_notification(request: NotificationSendRequest, db: AsyncSession =
     )
     db.add(notification)
     await db.flush()
+    if user.fcm_token:
+        await send_push_notification(
+            device_token=user.fcm_token,
+            title=request.title,
+            body=request.body,
+        )
+    
     return {"id": str(notification.id)}
 
 
@@ -134,3 +143,11 @@ async def unread_count(user_id: UUID, db: AsyncSession = Depends(get_db)):
     )
     rows = (await db.execute(stmt)).scalars().all()
     return {"count": len(rows)}
+
+@router.post("/fcm-token", status_code=status.HTTP_204_NO_CONTENT)
+async def save_fcm_token(request: FcmTokenRequest, db: AsyncSession = Depends(get_db)):
+    user = await db.get(UserModel, request.user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.fcm_token = request.fcm_token
+    await db.flush()
