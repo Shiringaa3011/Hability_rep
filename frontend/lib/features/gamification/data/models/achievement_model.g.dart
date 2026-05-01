@@ -6,9 +6,8 @@ part of 'achievement_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$AchievementModelImpl _$$AchievementModelImplFromJson(
-        Map<String, dynamic> json) =>
-    _$AchievementModelImpl(
+_AchievementModel _$AchievementModelFromJson(Map<String, dynamic> json) =>
+    _AchievementModel(
       id: json['id'] as String,
       name: json['name'] as String,
       description: json['description'] as String,
@@ -22,8 +21,7 @@ _$AchievementModelImpl _$$AchievementModelImplFromJson(
       earnedAt: json['earned_at'] as String?,
     );
 
-Map<String, dynamic> _$$AchievementModelImplToJson(
-        _$AchievementModelImpl instance) =>
+Map<String, dynamic> _$AchievementModelToJson(_AchievementModel instance) =>
     <String, dynamic>{
       'id': instance.id,
       'name': instance.name,
