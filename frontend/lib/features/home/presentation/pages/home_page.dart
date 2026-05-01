@@ -25,6 +25,7 @@ class HomePage extends StatelessWidget {
         getToday: di.sl(),
         getGroupOptions: di.sl(),
         toggle: di.sl(),
+        completeHabit: di.sl(),
       )..add(HomeLoadRequested(userId)),
       child: _HabitsScaffold(userId: userId),
     );
@@ -43,6 +44,7 @@ class _HabitsScaffold extends StatelessWidget {
     return Scaffold(
       backgroundColor: colors.background,
       floatingActionButton: FloatingActionButton(
+        heroTag: 'habits_fab',
         onPressed: () => _onAddPressed(context),
         child: const Icon(DSIcons.add),
       ),
@@ -113,7 +115,11 @@ class _HabitsScaffold extends StatelessWidget {
     );
     if (!context.mounted) return;
     if (created == true) {
-      context.read<HomeBloc>().add(HomeLoadRequested(userId));
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          context.read<HomeBloc>().add(HomeLoadRequested(userId));
+        }
+      });
     }
   }
 }
