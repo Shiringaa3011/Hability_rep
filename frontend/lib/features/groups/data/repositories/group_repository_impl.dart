@@ -4,6 +4,7 @@ import '../../../../core/constants/api_constants.dart';
 import '../../domain/entities/group_entity.dart';
 import '../../domain/entities/group_member_entity.dart';
 import '../../domain/repositories/group_repository.dart';
+import '../../domain/entities/group_invite_entity.dart';
 
 class GroupRepositoryImpl implements GroupRepository {
   GroupRepositoryImpl({required this.dio});
@@ -136,7 +137,9 @@ class GroupRepositoryImpl implements GroupRepository {
 
   @override
   Future<List<GroupInviteEntity>> getPendingInvites(String userId) async {
-    final response = await dio.get('${ApiConstants.groupsPath}/invites/pending/$userId');
+    final response = await dio.get(
+      '${ApiConstants.groupsPath}/invites/pending/$userId',
+    );
     final rows = response.data as List<dynamic>;
     return rows.map((raw) {
       final m = raw as Map<String, dynamic>;
@@ -166,5 +169,16 @@ class GroupRepositoryImpl implements GroupRepository {
         'accept': accept,
       },
     );
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> searchUsers(String query) async {
+    final response = await dio.get(
+      '/api/v1/users/search',
+      queryParameters: {'q': query},
+    );
+    return (response.data as List<dynamic>)
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
   }
 }

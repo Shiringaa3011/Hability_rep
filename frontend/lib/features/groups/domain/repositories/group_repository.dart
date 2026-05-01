@@ -1,5 +1,6 @@
 import '../entities/group_entity.dart';
 import '../entities/group_member_entity.dart';
+import '../entities/group_invite_entity.dart';
 
 abstract class GroupRepository {
   Future<List<GroupEntity>> getUserGroups(String userId);
@@ -31,6 +32,8 @@ abstract class GroupRepository {
     required String userId,
     required bool accept,
   });
+
+  Future<List<Map<String, dynamic>>> searchUsers(String query);
 }
 
 class GroupDetail {
@@ -52,26 +55,4 @@ class GroupDetail {
       members.isEmpty ? null : members.first;
 
   int get leaderReactionCount => leader?.reactions ?? 0;
-}
-
-class GroupInviteEntity {
-  final String id;
-  final String groupId;
-  final String groupName;
-  final String fromUserId;
-  final String fromUsername;
-  final String toUserId;
-  final String status;
-  final DateTime createdAt;
-
-  const GroupInviteEntity({
-    required this.id,
-    required this.groupId,
-    required this.groupName,
-    required this.fromUserId,
-    required this.fromUsername,
-    required this.toUserId,
-    required this.status,
-    required this.createdAt,
-  });
 }
