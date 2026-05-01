@@ -77,6 +77,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ToggleHabitCompletion(sl()));
   sl.registerLazySingleton(() => GetHabitById(sl()));
   sl.registerLazySingleton(() => UpsertHabitDefinition(sl()));
+  sl.registerLazySingleton(() => DeleteHabitUseCase(sl<HomeRepository>()));
 
   sl.registerLazySingleton(() => GetNotificationHistory(sl()));
   sl.registerLazySingleton(() => MarkNotificationRead(sl()));
@@ -84,12 +85,34 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetNotificationSettings(sl()));
   sl.registerLazySingleton(() => SaveNotificationSettings(sl()));
 
-//!!!!
   sl.registerLazySingleton<AuthStorage>(() => AuthStorage());
   await _initGamification();
 }
 
 Future<void> _initGamification() async {
+  sl.registerLazySingleton<GamificationRemoteDataSource>(
+    () => GamificationRemoteDataSourceImpl(dio: sl()),
+  );
+
+  sl.registerLazySingleton<GamificationLocalDataSource>(
+    () => GamificationLocalDataSourceImpl(hive: sl()),
+  );
+
+  sl.registerLazySingleton<GamificationRepository>(
+    () => GamificationRepositoryImpl(
+      remoteDataSource: sl(),
+      localDataSource: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton(() => GetUserLevel(sl()));
+  sl.registerLazySingleton(() => GetUserStats(sl()));
+  sl.registerLazySingleton(() => GetHabitsStats(sl()));
+  sl.registerLazySingleton(() => GetAchievements(sl()));
+  sl.registerLazySingleton(() => GetGroupAchievements(sl()));
+  sl.registerLazySingleton(() => GetGroupStats(sl()));
+  sl.registerLazySingleton(() => CompleteHabit(sl()));
+
   sl.registerFactory(
     () => LevelBloc(getUserLevel: sl()),
   );
@@ -113,29 +136,4 @@ Future<void> _initGamification() async {
   sl.registerFactory(
     () => GroupStatsBloc(getGroupStats: sl()),
   );
-
-  sl.registerLazySingleton(() => GetUserLevel(sl()));
-  sl.registerLazySingleton(() => GetUserStats(sl()));
-  sl.registerLazySingleton(() => GetHabitsStats(sl()));
-  sl.registerLazySingleton(() => GetAchievements(sl()));
-  sl.registerLazySingleton(() => GetGroupAchievements(sl()));
-  sl.registerLazySingleton(() => GetGroupStats(sl()));
-  sl.registerLazySingleton(() => CompleteHabit(sl()));
-
-  sl.registerLazySingleton<GamificationRepository>(
-    () => GamificationRepositoryImpl(
-      remoteDataSource: sl(),
-      localDataSource: sl(),
-    ),
-  );
-
-  sl.registerLazySingleton<GamificationRemoteDataSource>(
-    () => GamificationRemoteDataSourceImpl(dio: sl()),
-  );
-
-  sl.registerLazySingleton<GamificationLocalDataSource>(
-    () => GamificationLocalDataSourceImpl(hive: sl()),
-  );
-
-  sl.registerLazySingleton(() => DeleteHabitUseCase(sl<HomeRepository>()));
 }
