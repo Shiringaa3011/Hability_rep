@@ -13,6 +13,8 @@ import '../../../gamification/presentation/pages/level_page.dart';
 import '../../../groups/domain/repositories/group_repository.dart';
 import '../../../notifications/presentation/pages/notification_history_page.dart';
 import '../../../notifications/presentation/pages/notification_settings_page.dart';
+import '../../../groups/domain/entities/group_invite_entity.dart';
+import '../../../../core/services/auth_storage.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({
@@ -246,6 +248,8 @@ class _ThemeOption extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
+  const _Header();
+
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
@@ -256,18 +260,54 @@ class _Header extends StatelessWidget {
           'Профиль',
           style: AppTextStyles.displayMedium.copyWith(color: colors.foreground),
         ),
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: colors.secondary,
-            shape: BoxShape.circle,
+        GestureDetector(
+          onTap: () => _showLogoutDialog(context),
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: colors.secondary,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.logout, size: 18, color: colors.mutedForeground),
           ),
-          child: Icon(DSIcons.settings, size: 18, color: colors.mutedForeground),
         ),
       ],
     );
   }
+
+Future<void> _showLogoutDialog(BuildContext context) async {
+  final colors = context.appColors;
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text('Выйти из аккаунта?', style: TextStyle(color: colors.foreground)),
+      content: Text('Вы будете перенаправлены на экран входа.', style: TextStyle(color: colors.mutedForeground)),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: Text('Нет', style: TextStyle(color: colors.mutedForeground)),
+        ),
+        OutlinedButton(
+          onPressed: () => Navigator.of(ctx).pop(true),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: colors.destructive),
+            foregroundColor: colors.destructive,
+          ),
+          child: const Text('Да'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed == true && context.mounted) {
+    await di.sl<AuthStorage>().clear();
+    if (context.mounted) {
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+    }
+  }
+}
+
 }
 
 class _IdentityCard extends StatelessWidget {
@@ -472,14 +512,133 @@ class _MenuItem extends StatelessWidget {
   }
 }
 
-class _PendingInvitesSection extends StatelessWidget {
+class _PendingInvitesSection extends StatefulWidget {
   final String userId;
 
   const _PendingInvitesSection({required this.userId});
 
   @override
+  State<_PendingInvitesSection> createState() => _PendingInvitesSectionState();
+}
+
+class _PendingInvitesSectionState extends State<_PendingInvitesSection> {
+  List<GroupInviteEntity>? _invites;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInvites();
+  }
+
+  Future<void> _loadInvites() async {
+    try {
+      final repo = di.sl<GroupRepository>();
+      final invites = await repo.getPendingInvites(widget.userId);
+      setState(() {
+        _invites = invites;
+        _loading = false;
+      });
+    } catch (_) {
+      setState(() => _loading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // TODO: реализовать список приглашений
-    return const SizedBox.shrink();
+    final colors = context.appColors;
+    if (_loading) return const SizedBox.shrink();
+    if (_invites == null || _invites!.isEmpty) {
+      return Text(
+        'Нет активных приглашений',
+        style: AppTextStyles.caption.copyWith(
+          color: colors.mutedForeground,
+        ),
+      );
+    }
+    return Column(
+      children: _invites!.map((invite) => _InviteCard(
+        invite: invite,
+        onAccept: () async {
+          await di.sl<GroupRepository>().decideInvite(
+            inviteId: invite.id,
+            userId: widget.userId,
+            accept: true,
+          );
+          _loadInvites();
+        },
+        onDecline: () async {
+          await di.sl<GroupRepository>().decideInvite(
+            inviteId: invite.id,
+            userId: widget.userId,
+            accept: false,
+          );
+          _loadInvites();
+        },
+      )).toList(),
+    );
+  }
+}
+
+class _InviteCard extends StatelessWidget {
+  final GroupInviteEntity invite;
+  final VoidCallback onAccept;
+  final VoidCallback onDecline;
+
+  const _InviteCard({
+    required this.invite,
+    required this.onAccept,
+    required this.onDecline,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Группа: ${invite.groupName}',
+              style: AppTextStyles.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: colors.foreground,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Приглашает: ${invite.fromUsername}',
+              style: AppTextStyles.caption?.copyWith(
+                color: colors.mutedForeground,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                OutlinedButton(
+                  onPressed: onDecline,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: colors.destructive,
+                  ),
+                  child: const Text('Отклонить'),
+                ),
+                const SizedBox(width: 8),
+                FilledButton(
+                  onPressed: onAccept,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colors.primary,
+                  ),
+                  child: const Text('Принять'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
