@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:dio/dio.dart';
 
 import 'core/design_system/design_system.dart';
 import 'core/theme/theme_mode_controller.dart';
@@ -9,16 +12,27 @@ import 'features/groups/presentation/pages/groups_page.dart';
 import 'features/home/presentation/pages/home_page.dart';
 import 'features/profile/presentation/pages/profile_page.dart';
 import 'injection_container.dart' as di;
+import 'core/services/auth_storage.dart';
+import 'features/auth/presentation/pages/login_page.dart';
 
-import 'core/services/auth_storage.dart'; 
-import 'features/auth/presentation/pages/register_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await Firebase.initializeApp();
+
+  final messaging = FirebaseMessaging.instance;
+  await messaging.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
+  FirebaseMessaging.onMessageOpenedApp.listen((message) {
+    //добавить навигацию
+  });
+
   await Hive.initFlutter();
-
   await ThemeModeController.init();
-
   await di.init();
 
   runApp(const HabitlyApp());
@@ -41,7 +55,6 @@ class HabitlyApp extends StatelessWidget {
         routes: {
           '/': (context) => const AuthWrapper(),
           '/home': (context) {
-            // Извлекаем userId из аргументов
             final args = ModalRoute.of(context)?.settings.arguments as String;
             return _MainShell(userId: args);
           },
@@ -50,7 +63,6 @@ class HabitlyApp extends StatelessWidget {
     );
   }
 }
-
 
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
@@ -73,12 +85,27 @@ class _AuthWrapperState extends State<AuthWrapper> {
     final authStorage = di.sl<AuthStorage>();
     final userId = await authStorage.getUserId();
     final isValid = userId != null && userId.isNotEmpty;
+
+    if (isValid) {
+      try {
+        final token = await FirebaseMessaging.instance.getToken();
+        if (token != null) {
+          final dio = di.sl<Dio>();
+          await dio.post('/notifications/fcm-token', data: {
+            'user_id': userId,
+            'fcm_token': token,
+          });
+        }
+      } catch (_) {}
+    }
+
     setState(() {
       _userId = isValid ? userId : null;
       _isLoading = false;
     });
   }
- @override
+
+  @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
@@ -86,16 +113,13 @@ class _AuthWrapperState extends State<AuthWrapper> {
       );
     }
 
-    // Если пользователь не залогинен — показываем экран регистрации
     if (_userId == null) {
-      return const RegisterPage();  // LoginPage !!!!
+      return const LoginPage();
     }
 
-    // Пользователь залогинен — показываем главный экран с его userId
     return _MainShell(userId: _userId!);
   }
 }
-
 
 class _MainShell extends StatefulWidget {
   final String userId;
