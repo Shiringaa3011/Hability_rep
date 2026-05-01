@@ -122,6 +122,15 @@ class AppTheme {
           (s) => s.contains(WidgetState.selected) ? c.primary : c.border,
         ),
       ),
+      listTileTheme: ListTileThemeData(
+        tileColor: c.card,
+        iconColor: c.mutedForeground,
+        textColor: c.foreground,
+        titleTextStyle: AppTextStyles.titleSmall.copyWith(color: c.foreground),
+        subtitleTextStyle: AppTextStyles.caption.copyWith(color: c.mutedForeground),
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.cardRadius),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: c.card,
         indicatorColor: c.secondary,
