@@ -38,6 +38,8 @@ dependencies:
   google_fonts: ^6.2.1
   shared_preferences: ^2.2.0
 
+  logger: ^2.5.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -50,6 +52,12 @@ dev_dependencies:
 
   mockito: ^5.4.4
   bloc_test: ^10.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon.png"
