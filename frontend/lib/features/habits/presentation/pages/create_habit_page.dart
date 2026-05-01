@@ -5,6 +5,8 @@ import '../../../groups/domain/entities/group_entity.dart';
 import '../../../groups/domain/repositories/group_repository.dart';
 import '../../../home/domain/entities/today_habit_entity.dart';
 import '../../../home/domain/usecases/upsert_habit_definition.dart';
+import '../../../../core/design_system/theme/app_colors.dart';
+import '../../../../core/design_system/theme/app_text_styles.dart';
 
 class CreateHabitPage extends StatefulWidget {
   final String userId;
@@ -43,6 +45,8 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
     try {
       final allGroups = await _groupRepository.getUserGroups(widget.userId);
       
+      if (!mounted) return;
+      
       final sortedGroups = List<GroupEntity>.from(allGroups);
       sortedGroups.sort((a, b) {
         final aAvailable = a.habitsCount < 5;
@@ -52,13 +56,15 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
         return 0;
       });
       
+      if (!mounted) return;
+      
       setState(() {
         _groups = sortedGroups;
         _loading = false;
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
+      if (!mounted) return;
       setState(() => _loading = false);
-      print('Error loading groups: $e');
     }
   }
 
@@ -162,9 +168,9 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
             const SizedBox(height: 16),
             Text(
               'Периодичность',
-              style: TextStyle(
+              style: AppTextStyles.bodySmall?.copyWith(
+                color: colors.mutedForeground,
                 fontWeight: FontWeight.w500,
-                color: colors.foreground,
               ),
             ),
             const SizedBox(height: 8),
@@ -191,9 +197,9 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
             if (_frequency == 'weekly') ...[
               Text(
                 'День недели',
-                style: TextStyle(
+                style: AppTextStyles.bodySmall?.copyWith(
+                  color: colors.mutedForeground,
                   fontWeight: FontWeight.w500,
-                  color: colors.foreground,
                 ),
               ),
               const SizedBox(height: 8),
@@ -204,14 +210,35 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
               ),
               const SizedBox(height: 16),
             ],
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Время выполнения'),
-              subtitle: Text(_fmt(_time) ?? 'Не задано'),
-              trailing: IconButton(
-                icon: const Icon(Icons.schedule),
-                onPressed: _pickMainTime,
-              ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Время выполнения',
+                        style: AppTextStyles.bodySmall?.copyWith(
+                          color: colors.mutedForeground,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _fmt(_time) ?? 'Не задано',
+                        style: AppTextStyles.bodyMedium?.copyWith(
+                          color: _time != null ? colors.foreground : colors.mutedForeground,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.schedule, color: colors.mutedForeground),
+                  onPressed: _pickMainTime,
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String?>(
@@ -232,7 +259,7 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
                     enabled: isAvailable,
                     child: Row(
                       children: [
-                        Expanded(child: Text(group.name)),
+                        Flexible(child: Text(group.name)),
                         if (!isAvailable)
                           Text(
                             'лимит 5 привычек',
@@ -255,25 +282,52 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
             const SizedBox(height: 16),
             Text(
               'Напоминания',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: colors.foreground,
+              style: AppTextStyles.bodySmall?.copyWith(
+                color: colors.mutedForeground,
+                fontWeight: FontWeight.w500,
               ),
             ),
+            const SizedBox(height: 4),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Уведомления для этой привычки'),
+              title: Text(
+                'Уведомления для этой привычки',
+                style: AppTextStyles.bodyMedium?.copyWith(
+                  color: colors.foreground,
+                ),
+              ),
               value: _reminders,
               onChanged: (v) => setState(() => _reminders = v),
             ),
             if (_reminders)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Время напоминания'),
-                subtitle: Text(_fmt(_reminderTime) ?? 'Не выбрано'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.alarm),
-                  onPressed: _pickReminderTime,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Время напоминания',
+                          style: AppTextStyles.bodySmall?.copyWith(
+                            color: colors.mutedForeground,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _fmt(_reminderTime) ?? 'Не выбрано',
+                          style: AppTextStyles.bodyMedium?.copyWith(
+                            color: _reminderTime != null ? colors.foreground : colors.mutedForeground,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.alarm, color: colors.mutedForeground),
+                    onPressed: _pickReminderTime,
+                  ),
+                ],
               ),
             const SizedBox(height: 24),
             FilledButton(
