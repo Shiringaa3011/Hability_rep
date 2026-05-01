@@ -16,8 +16,8 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
       '${ApiConstants.notificationsPath}/send',
       data: {
         'user_id': userId,
-        'title': 'Система уведомлений активна',
-        'body': 'Канал уведомлений подключен к backend.',
+        'title': 'Добро пожаловать в Habitly',
+        'body': 'Пусть этот день будет продуктивным!',
         'kind': 'info',
       },
     );

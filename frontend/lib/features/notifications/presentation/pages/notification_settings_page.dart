@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../injection_container.dart' as di;
 import '../../domain/entities/notification_settings_snapshot.dart';
 import '../cubit/notification_settings_cubit.dart';
+import '../../../../core/design_system/theme/app_colors.dart';
 
 class _NotificationSettingsView extends StatelessWidget {
   const _NotificationSettingsView();
@@ -26,7 +27,7 @@ class _NotificationSettingsView extends StatelessWidget {
                 subtitle: const Text('Глобальный переключатель доставки push и in-app'),
                 value: s.allowNotifications,
                 onChanged: (v) => context.read<NotificationSettingsCubit>().setAllow(v),
-                activeColor: colors.primary,
+                
               ),
               SwitchListTile(
                 title: Text(
@@ -41,9 +42,6 @@ class _NotificationSettingsView extends StatelessWidget {
                 onChanged: isEnabled
                     ? (v) => context.read<NotificationSettingsCubit>().setSound(v)
                     : null,
-                activeColor: colors.primary,
-                inactiveThumbColor: colors.mutedForeground,
-                inactiveTrackColor: colors.muted,
               ),
               SwitchListTile(
                 title: Text(
@@ -58,9 +56,6 @@ class _NotificationSettingsView extends StatelessWidget {
                 onChanged: isEnabled
                     ? (v) => context.read<NotificationSettingsCubit>().setVibration(v)
                     : null,
-                activeColor: colors.primary,
-                inactiveThumbColor: colors.mutedForeground,
-                inactiveTrackColor: colors.muted,
               ),
             ],
           );
