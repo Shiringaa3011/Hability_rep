@@ -62,7 +62,7 @@ class GroupDetailBloc extends Bloc<GroupDetailEvent, GroupDetailState> {
     if (!state.canLeave) {
       emit(
         state.copyWith(
-          error: 'Создатель группы не может выйти из группы',
+          error: 'Создатель не может выйти из группы',
         ),
       );
       return;
@@ -73,7 +73,7 @@ class GroupDetailBloc extends Bloc<GroupDetailEvent, GroupDetailState> {
       emit(
         state.copyWith(
           isLoading: false,
-          successMessage: 'Вы вышли из группы (mock)',
+          successMessage: 'Вы вышли из группы',
           clearMessage: false,
         ),
       );

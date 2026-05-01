@@ -16,3 +16,4 @@ class RemoveMemberPressed extends GroupDetailEvent {
 }
 
 class SendReactionToLeader extends GroupDetailEvent {}
+class DeleteGroupPressed extends GroupDetailEvent {} 

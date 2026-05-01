@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../injection_container.dart' as di;
 import '../../domain/usecases/create_group.dart';
+import '../../../../core/design_system/theme/app_colors.dart';
+import '../../../../core/design_system/theme/app_text_styles.dart';
 
 class CreateGroupPage extends StatefulWidget {
   final String userId;
@@ -37,6 +39,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final ok = _name.text.trim().isNotEmpty;
     return Scaffold(
       appBar: AppBar(title: const Text('Новая группа')),
@@ -64,10 +67,12 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
               ),
               maxLines: 3,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             Text(
-              'Приглашение участников: после подключения api.',
-              style: Theme.of(context).textTheme.bodySmall,
+              'После создания группы вы сможете пригласить участников.',
+              style: AppTextStyles.bodySmall?.copyWith(
+                color: colors.mutedForeground,
+              ),
             ),
             const SizedBox(height: 24),
             FilledButton(

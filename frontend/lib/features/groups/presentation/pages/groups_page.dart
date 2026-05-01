@@ -38,7 +38,11 @@ class _GroupsScaffold extends StatelessWidget {
     );
     if (!context.mounted) return;
     if (ok == true) {
-      context.read<GroupsBloc>().add(RefreshGroups(userId));
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          context.read<GroupsBloc>().add(RefreshGroups(userId));
+        }
+      });
     }
   }
 
@@ -48,6 +52,7 @@ class _GroupsScaffold extends StatelessWidget {
     return Scaffold(
       backgroundColor: colors.background,
       floatingActionButton: FloatingActionButton(
+        heroTag: 'groups_fab',
         onPressed: () => _onCreate(context),
         child: const Icon(DSIcons.add),
       ),

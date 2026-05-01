@@ -12,6 +12,8 @@ import '../bloc/group_detail_event.dart';
 import '../bloc/group_detail_state.dart';
 import '../widgets/member_list_item.dart';
 import '../widgets/reaction_button.dart';
+import '../../../../core/design_system/theme/app_colors.dart';
+import '../../../../core/design_system/theme/app_text_styles.dart';
 
 class GroupDetailPage extends StatelessWidget {
   final String groupId;
@@ -64,6 +66,7 @@ class _GroupDetailView extends StatelessWidget {
       },
       builder: (context, state) {
         final detail = state.detail;
+        final colors = context.appColors;
         return Scaffold(
           appBar: AppBar(
             title: Text(detail?.group.name ?? 'Группа'),
@@ -145,30 +148,39 @@ class _GroupDetailView extends StatelessWidget {
                           }),
                           const SizedBox(height: 12),
                           if (state.isOwner) ...[
-                            OutlinedButton.icon(
-                              onPressed: () => _showInviteDialog(context, state),
-                              icon: const Icon(Icons.person_add_alt_1),
-                              label: const Text('Пригласить в группу'),
-                            ),
-                            const SizedBox(height: 12),
-                          ],
+  OutlinedButton.icon(
+    onPressed: () => _showInviteDialog(context, state),
+    icon: const Icon(Icons.person_add_alt_1),
+    label: const Text('Пригласить в группу'),
+  ),
+  const SizedBox(height: 12),
+  OutlinedButton.icon(
+  onPressed: () => _showDeleteGroupDialog(context),
+  icon: const Icon(Icons.delete_outline, color: Colors.red),
+  label: const Text('Удалить группу', style: TextStyle(color: Colors.red)),
+  style: OutlinedButton.styleFrom(
+    backgroundColor: colors.card,
+    side: const BorderSide(color: Colors.red),
+  ),
+),
+  const SizedBox(height: 12),
+],
                           if (state.leader != null &&
                               state.leader!.userId != state.currentUserId)
                             ReactionToLeaderButton(
                               enabled: !state.isLoading,
+                              reactionCount: state.leader!.reactions,
                               onPressed: () => context
                                   .read<GroupDetailBloc>()
                                   .add(SendReactionToLeader()),
                             ),
                           const SizedBox(height: 24),
                           FilledButton(
-                            onPressed: state.canLeave && !state.isLoading
-                                ? () => context
-                                    .read<GroupDetailBloc>()
-                                    .add(LeaveGroupPressed())
-                                : null,
-                            child: const Text('Выйти из группы'),
-                          ),
+  onPressed: state.canLeave && !state.isLoading
+      ? () => _showLeaveDialog(context)
+      : null,
+  child: const Text('Выйти из группы'),
+),
                           if (!state.canLeave)
                             Padding(
                               padding: const EdgeInsets.only(top: 8),
@@ -186,53 +198,228 @@ class _GroupDetailView extends StatelessWidget {
   }
 }
 
-Future<void> _showInviteDialog(BuildContext context, GroupDetailState state) async {
-  final c = TextEditingController();
-  await showDialog<void>(
+Future<void> _showDeleteGroupDialog(BuildContext context) async {
+  final colors = context.appColors;
+  final confirmed = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: const Text('Пригласить пользователя'),
-      content: TextField(
-        controller: c,
-        decoration: const InputDecoration(
-          hintText: 'username',
-          border: OutlineInputBorder(),
-        ),
-      ),
+      title: Text('Удалить группу?', style: TextStyle(color: colors.foreground)),
+      content: Text('Это действие нельзя отменить. Все участники потеряют доступ к группе.', style: TextStyle(color: colors.mutedForeground)),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(ctx).pop(),
-          child: const Text('Отмена'),
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: Text('Нет', style: TextStyle(color: colors.mutedForeground)),
         ),
-        FilledButton(
-          onPressed: () async {
-            final username = c.text.trim();
-            if (username.isEmpty) return;
-            try {
-              await di.sl<GroupRepository>().inviteUser(
-                    groupId: state.groupId,
-                    fromUserId: state.currentUserId,
-                    toUsername: username,
-                  );
-              if (ctx.mounted) {
-                Navigator.of(ctx).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Приглашение отправлено')),
-                );
-              }
-            } catch (e) {
-              if (ctx.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Ошибка: $e')),
-                );
-              }
-            }
-          },
-          child: const Text('Отправить'),
+        OutlinedButton(
+          onPressed: () => Navigator.of(ctx).pop(true),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: colors.destructive),
+            foregroundColor: colors.destructive,
+          ),
+          child: const Text('Да'),
         ),
       ],
     ),
   );
+
+  if (confirmed == true && context.mounted) {
+    context.read<GroupDetailBloc>().add(DeleteGroupPressed());
+  }
+}
+
+Future<void> _showInviteDialog(BuildContext context, GroupDetailState state) async {
+  final repo = di.sl<GroupRepository>();
+  
+  await showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: context.appColors.card,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
+    builder: (sheetContext) => _InviteSheet(
+      groupId: state.groupId,
+      fromUserId: state.currentUserId,
+      repository: repo,
+    ),
+  );
+}
+
+class _InviteSheet extends StatefulWidget {
+  final String groupId;
+  final String fromUserId;
+  final GroupRepository repository;
+
+  const _InviteSheet({
+    required this.groupId,
+    required this.fromUserId,
+    required this.repository,
+  });
+
+  @override
+  State<_InviteSheet> createState() => _InviteSheetState();
+}
+
+class _InviteSheetState extends State<_InviteSheet> {
+  final _controller = TextEditingController();
+  List<Map<String, dynamic>> _results = [];
+  Map<String, dynamic>? _selectedUser;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _search(String query) async {
+    if (query.length < 2) {
+      setState(() => _results = []);
+      return;
+    }
+    try {
+      final results = await widget.repository.searchUsers(query);
+      setState(() => _results = results);
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: colors.mutedForeground,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'Пригласить участника',
+              style: AppTextStyles.titleMedium?.copyWith(color: colors.foreground),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              controller: _controller,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Введите имя пользователя',
+                border: const OutlineInputBorder(),
+                suffixIcon: _controller.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _controller.clear();
+                          setState(() {
+                            _results = [];
+                            _selectedUser = null;
+                          });
+                        },
+                      )
+                    : null,
+              ),
+              onChanged: (v) {
+                setState(() => _selectedUser = null);
+                _search(v);
+              },
+            ),
+          ),
+          if (_results.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            ..._results.map((user) => ListTile(
+              leading: CircleAvatar(
+                backgroundColor: colors.primary,
+                child: Text(
+                  user['username'][0].toUpperCase(),
+                  style: TextStyle(color: colors.primaryForeground),
+                ),
+              ),
+              title: Text(user['username']),
+              selected: _selectedUser?['user_id'] == user['user_id'],
+              onTap: () {
+                setState(() => _selectedUser = user);
+                _controller.text = user['username'];
+              },
+            )),
+          ],
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+            child: FilledButton(
+              onPressed: _selectedUser != null
+                  ? () async {
+                      try {
+                        await widget.repository.inviteUser(
+                          groupId: widget.groupId,
+                          fromUserId: widget.fromUserId,
+                          toUsername: _selectedUser!['username'],
+                        );
+                        if (mounted) {
+                          Navigator.of(context).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Приглашение отправлено')),
+                          );
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Ошибка: $e')),
+                          );
+                        }
+                      }
+                    }
+                  : null,
+              child: const Text('Отправить приглашение'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+Future<void> _showLeaveDialog(BuildContext context) async {
+  final colors = context.appColors;
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text('Выйти из группы?', style: TextStyle(color: colors.foreground)),
+      content: Text('Вы уверены, что хотите покинуть группу?', style: TextStyle(color: colors.mutedForeground)),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: Text('Нет', style: TextStyle(color: colors.mutedForeground)),
+        ),
+        OutlinedButton(
+          onPressed: () => Navigator.of(ctx).pop(true),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: colors.destructive),
+            foregroundColor: colors.destructive,
+          ),
+          child: const Text('Да'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed == true && context.mounted) {
+    context.read<GroupDetailBloc>().add(LeaveGroupPressed());
+  }
 }
 
 class _SummaryCard extends StatelessWidget {
