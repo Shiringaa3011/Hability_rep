@@ -1,8 +1,5 @@
-<<<<<<< HEAD
 apply(plugin = "com.google.gms.google-services")
 
-=======
->>>>>>> main
 plugins {
     id("com.android.application")
     id("kotlin-android")

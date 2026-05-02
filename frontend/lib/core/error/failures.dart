@@ -1,13 +1,7 @@
-<<<<<<< HEAD
 import 'exceptions.dart';
 
 abstract class Failure {
   const Failure(this.message);
-=======
-abstract class Failure {
-  const Failure(this.message);
-  
->>>>>>> main
   final String message;
 }
 
@@ -30,7 +24,6 @@ class ValidationFailure extends Failure {
 class NotFoundFailure extends Failure {
   const NotFoundFailure([String message = 'Resource not found']) : super(message);
 }
-<<<<<<< HEAD
 
 Failure fromException(AppException e) {
   if (e is ServerException) return ServerFailure(e.message);
@@ -38,5 +31,3 @@ Failure fromException(AppException e) {
   if (e is NetworkException) return NetworkFailure(e.message);
   return ServerFailure(e.message);
 }
-=======
->>>>>>> main

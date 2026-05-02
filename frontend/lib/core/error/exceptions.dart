@@ -1,9 +1,6 @@
-<<<<<<< HEAD
 import 'package:dio/dio.dart';
 import '../services/logger_service.dart';
 
-=======
->>>>>>> main
 class AppException implements Exception {
   const AppException(this.message);
   
@@ -24,7 +21,6 @@ class CacheException extends AppException {
 class NetworkException extends AppException {
   const NetworkException([String message = 'Network error']) : super(message);
 }
-<<<<<<< HEAD
 
 AppException fromDioException(DioException e) {
   AppLogger.error(
@@ -49,5 +45,3 @@ AppException fromDioException(DioException e) {
       return const NetworkException('Что-то пошло не так');
   }
 }
-=======
->>>>>>> main
