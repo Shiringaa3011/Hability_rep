@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 apply(plugin = "com.google.gms.google-services")
 
+=======
+>>>>>>> main
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -44,9 +47,12 @@ android {
 flutter {
     source = "../.."
 }
+<<<<<<< HEAD
 
 dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.12.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-messaging")
 }
+=======
+>>>>>>> main

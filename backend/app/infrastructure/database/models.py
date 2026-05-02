@@ -120,14 +120,14 @@ class HabitModel(Base):
         index=True,
     )
     scheduled_time = Column(Time, nullable=True)
-    frequency = Column(  # type: ignore[var-annotated]
+    frequency = Column(
         SQLEnum(HabitFrequency, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         default=HabitFrequency.DAILY,
     )
     reminder_enabled = Column(Boolean, nullable=False, default=False)
     reminder_time = Column(Time, nullable=True)
-    difficulty = Column(Integer, nullable=False)  # 1-5
+    difficulty = Column(Integer, nullable=False)
     target_days = Column(Integer, nullable=False, default=30)
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(
@@ -139,7 +139,6 @@ class HabitModel(Base):
     completions = relationship(
         "HabitCompletionModel", back_populates="habit", cascade="all, delete-orphan"
     )
-
     group = relationship("GroupModel", back_populates="habits")
 
     __table_args__ = (Index("ix_habits_user_active", "user_id", "is_active"),)
@@ -195,7 +194,7 @@ class AchievementModel(Base):
     name = Column(String(200), nullable=False, unique=True)
     description = Column(Text, nullable=False)
     icon = Column(String(100), nullable=False)
-    achievement_type = Column(  # type: ignore[var-annotated]
+    achievement_type = Column(
         SQLEnum(AchievementType, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         index=True,
@@ -406,7 +405,7 @@ class UserStatsModel(Base):
         nullable=False,
         index=True,
     )
-    period = Column(  # type: ignore[var-annotated]
+    period = Column(
         SQLEnum(StatsPeriod, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         index=True,
@@ -431,9 +430,7 @@ class UserStatsModel(Base):
     )
 
     def __repr__(self):
-        return (
-            f"<UserStats(id={self.id}, user_id={self.user_id}, period={self.period})>"
-        )
+        return f"<UserStats(id={self.id}, user_id={self.user_id}, period={self.period})>"
 
 
 class GroupAchievementModel(Base):
@@ -443,7 +440,7 @@ class GroupAchievementModel(Base):
     name = Column(String(200), nullable=False, unique=True)
     description = Column(Text, nullable=False)
     icon = Column(String(100), nullable=False)
-    achievement_type = Column(  # type: ignore[var-annotated]
+    achievement_type = Column(
         SQLEnum(
             GroupAchievementType,
             values_callable=lambda x: [e.value for e in x],
@@ -495,9 +492,7 @@ class EarnedGroupAchievementModel(Base):
     notified = Column(Boolean, nullable=False, default=False)
 
     group = relationship("GroupModel")
-    achievement = relationship(
-        "GroupAchievementModel", back_populates="earned"
-    )
+    achievement = relationship("GroupAchievementModel", back_populates="earned")
 
     __table_args__ = (
         UniqueConstraint(
@@ -506,6 +501,7 @@ class EarnedGroupAchievementModel(Base):
             name="uq_group_achievement_earned",
         ),
     )
+
 
 class VerificationCodeModel(Base):
     __tablename__ = "verification_codes"
@@ -516,6 +512,7 @@ class VerificationCodeModel(Base):
     expires_at = Column(DateTime(timezone=True), nullable=False)
     used = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
 
 class PendingNotificationModel(Base):
     __tablename__ = "pending_notifications"

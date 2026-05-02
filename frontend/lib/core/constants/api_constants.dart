@@ -10,9 +10,12 @@ class ApiConstants {
   static const String gamificationPath = '/gamification';
   static const String statsPath = '/stats';
   static const String achievementsPath = '/achievements';
+<<<<<<< HEAD
   static const String groupsPath = '/groups';
   static const String habitsPath = '/habits';
   static const String notificationsPath = '/notifications';
+=======
+>>>>>>> main
 
   static const Duration connectTimeout = Duration(seconds: 10);
   static const Duration receiveTimeout = Duration(seconds: 10);

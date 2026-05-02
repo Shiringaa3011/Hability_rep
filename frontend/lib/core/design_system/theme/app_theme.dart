@@ -117,6 +117,7 @@ class AppTheme {
         linearTrackColor: c.border,
       ),
       switchTheme: SwitchThemeData(
+<<<<<<< HEAD
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         thumbColor: WidgetStateProperty.resolveWith(
           (states) {
@@ -138,6 +139,12 @@ class AppTheme {
           },
         ),
         trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
+=======
+        thumbColor: WidgetStatePropertyAll(c.primaryForeground),
+        trackColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected) ? c.primary : c.border,
+        ),
+>>>>>>> main
       ),
       listTileTheme: ListTileThemeData(
         tileColor: c.card,

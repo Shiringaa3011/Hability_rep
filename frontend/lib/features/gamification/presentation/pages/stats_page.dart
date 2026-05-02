@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/design_system/design_system.dart';
-import '../../../../injection_container.dart' as di;
 import '../../domain/entities/habit_stats.dart';
 import '../../domain/entities/user_stats.dart';
 import '../bloc/stats/stats_bloc.dart';
 import '../bloc/stats/stats_event.dart';
 import '../bloc/stats/stats_state.dart';
+import '../widgets/charts/habit_timeline_bar_chart.dart';
 
 class StatsPage extends StatelessWidget {
   const StatsPage({required this.userId, super.key});
@@ -16,11 +16,7 @@ class StatsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => di.sl<StatsBloc>()
-        ..add(LoadStats(userId: userId, period: StatsPeriod.week)),
-      child: _StatsScaffold(userId: userId),
-    );
+    return _StatsScaffold(userId: userId);
   }
 }
 
@@ -38,7 +34,9 @@ class _StatsScaffoldState extends State<_StatsScaffold> {
 
   void _changePeriod(StatsPeriod p) {
     setState(() => _period = p);
-    context.read<StatsBloc>().add(ChangePeriod(userId: widget.userId, period: p));
+    context
+        .read<StatsBloc>()
+        .add(ChangePeriod(userId: widget.userId, period: p));
   }
 
   @override
@@ -103,7 +101,9 @@ class _StatsContent extends StatelessWidget {
         AppSpacing.bottomNavReserve,
       ),
       children: [
-        Text('Статистика', style: AppTextStyles.displayMedium.copyWith(color: colors.foreground)),
+        Text('Статистика',
+            style:
+                AppTextStyles.displayMedium.copyWith(color: colors.foreground)),
         const SizedBox(height: AppSpacing.xl),
         Row(
           children: [
@@ -121,17 +121,29 @@ class _StatsContent extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.xl),
+        if (period != StatsPeriod.day && state.timeline.isNotEmpty) ...[
+          DSCard(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: HabitTimelineBarChart(
+              data: state.timeline,
+              period: period,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+        ],
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
               'ВЫПОЛНЕНИЕ',
-              style: AppTextStyles.overline.copyWith(color: colors.mutedForeground),
+              style: AppTextStyles.overline
+                  .copyWith(color: colors.mutedForeground),
             ),
             Text(
               '$percent%',
-              style: AppTextStyles.displayMedium.copyWith(color: colors.primary),
+              style:
+                  AppTextStyles.displayMedium.copyWith(color: colors.primary),
             ),
           ],
         ),
@@ -271,7 +283,8 @@ class _MiniStat extends StatelessWidget {
         children: [
           Text(
             label,
-            style: AppTextStyles.overline.copyWith(color: colors.mutedForeground),
+            style:
+                AppTextStyles.overline.copyWith(color: colors.mutedForeground),
           ),
           const SizedBox(height: 4),
           Row(
@@ -316,12 +329,14 @@ class _HabitStatCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   habit.habitName,
-                  style: AppTextStyles.titleSmall.copyWith(color: colors.foreground),
+                  style: AppTextStyles.titleSmall
+                      .copyWith(color: colors.foreground),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: colors.secondary,
                   borderRadius: AppRadius.pillRadius,
@@ -345,7 +360,8 @@ class _HabitStatCard extends StatelessWidget {
               const Spacer(),
               Text(
                 'Пропуски: ${habit.missedCount}',
-                style: AppTextStyles.caption.copyWith(color: colors.mutedForeground),
+                style: AppTextStyles.caption
+                    .copyWith(color: colors.mutedForeground),
               ),
             ],
           ),
@@ -372,7 +388,8 @@ class _ErrorView extends StatelessWidget {
           children: [
             Icon(Icons.error_outline, size: 48, color: colors.destructive),
             const SizedBox(height: AppSpacing.md),
-            Text(message, textAlign: TextAlign.center, style: AppTextStyles.bodyMedium),
+            Text(message,
+                textAlign: TextAlign.center, style: AppTextStyles.bodyMedium),
             const SizedBox(height: AppSpacing.lg),
             DSButton(label: 'Повторить', onPressed: onRetry),
           ],

@@ -148,23 +148,23 @@ class _GroupDetailView extends StatelessWidget {
                           }),
                           const SizedBox(height: 12),
                           if (state.isOwner) ...[
-  OutlinedButton.icon(
-    onPressed: () => _showInviteDialog(context, state),
-    icon: const Icon(Icons.person_add_alt_1),
-    label: const Text('Пригласить в группу'),
-  ),
-  const SizedBox(height: 12),
-  OutlinedButton.icon(
-    onPressed: () => _showDeleteGroupDialog(context),
-    icon: const Icon(Icons.delete_outline, color: Colors.red),
-    label: const Text('Удалить группу', style: TextStyle(color: Colors.red)),
-    style: ButtonStyle(
-      backgroundColor: WidgetStatePropertyAll(colors.card),
-      side: const WidgetStatePropertyAll(BorderSide(color: Colors.red)),
-    ),
-  ),
-  const SizedBox(height: 12),
-],
+                            OutlinedButton.icon(
+                              onPressed: () => _showInviteDialog(context, state),
+                              icon: const Icon(Icons.person_add_alt_1),
+                              label: const Text('Пригласить в группу'),
+                            ),
+                            const SizedBox(height: 12),
+                            OutlinedButton.icon(
+                              onPressed: () => _showDeleteGroupDialog(context),
+                              icon: const Icon(Icons.delete_outline, color: Colors.red),
+                              label: const Text('Удалить группу', style: TextStyle(color: Colors.red)),
+                              style: ButtonStyle(
+                                backgroundColor: WidgetStatePropertyAll(colors.card),
+                                side: const WidgetStatePropertyAll(BorderSide(color: Colors.red)),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
                           if (state.leader != null &&
                               state.leader!.userId != state.currentUserId)
                             ReactionToLeaderButton(
@@ -176,11 +176,11 @@ class _GroupDetailView extends StatelessWidget {
                             ),
                           const SizedBox(height: 24),
                           FilledButton(
-  onPressed: state.canLeave && !state.isLoading
-      ? () => _showLeaveDialog(context)
-      : null,
-  child: const Text('Выйти из группы'),
-),
+                            onPressed: state.canLeave && !state.isLoading
+                                ? () => _showLeaveDialog(context)
+                                : null,
+                            child: const Text('Выйти из группы'),
+                          ),
                           if (!state.canLeave)
                             Padding(
                               padding: const EdgeInsets.only(top: 8),

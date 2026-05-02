@@ -29,6 +29,7 @@ class DSDateStrip extends StatelessWidget {
       (i) => anchor.add(Duration(days: i - daysBefore)),
     );
 
+<<<<<<< HEAD
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth == 0) return const SizedBox.shrink();
@@ -48,6 +49,22 @@ class DSDateStrip extends StatelessWidget {
               .toList(),
         );
       },
+=======
+    return Row(
+      children: days
+          .map((d) => Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  child: _DayCell(
+                    date: d,
+                    isSelected: _isSameDay(d, selectedDay),
+                    isToday: _isSameDay(d, anchor),
+                    onTap: () => onSelect(d),
+                  ),
+                ),
+              ))
+          .toList(),
+>>>>>>> main
     );
   }
 
