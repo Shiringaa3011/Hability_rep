@@ -506,3 +506,26 @@ class EarnedGroupAchievementModel(Base):
             name="uq_group_achievement_earned",
         ),
     )
+
+class VerificationCodeModel(Base):
+    __tablename__ = "verification_codes"
+
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    email = Column(String(255), nullable=False, index=True)
+    code = Column(String(6), nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    used = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+class PendingNotificationModel(Base):
+    __tablename__ = "pending_notifications"
+
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    user_id = Column(GUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    title = Column(String(40), nullable=False)
+    body = Column(String(120), nullable=False)
+    kind = Column(String(30), nullable=False, default="habit_reminder")
+    scheduled_for = Column(DateTime(timezone=True), nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    delivered = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

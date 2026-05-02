@@ -141,3 +141,10 @@ class RegisterResponse(BaseModel):
 class FcmTokenRequest(BaseModel):
     user_id: UUID
     fcm_token: str
+
+class SendCodeRequest(BaseModel):
+    email: str
+
+class VerifyCodeRequest(BaseModel):
+    email: str
+    code: str = Field(min_length=6, max_length=6)

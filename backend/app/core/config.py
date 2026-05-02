@@ -8,6 +8,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="ignore",
     )
 
     APP_NAME: str = "Hability API"
@@ -18,6 +19,9 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/hability"
 
     BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+    
+    SMTP_EMAIL: str = ""
+    SMTP_PASSWORD: str = ""
 
 
 settings = Settings()

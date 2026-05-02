@@ -2,16 +2,24 @@ from typing import List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.domain.services.group_achievement_service import GroupAchievementService
+from app.infrastructure.services.scheduler_service import send_or_queue
 from app.schemas.group_achievement import (
     AvailableGroupAchievementsResponse,
     EarnedGroupAchievementResponse,
     GroupAchievementProgressResponse,
     GroupAchievementResponse,
     GroupAchievementsListResponse,
+)
+from app.infrastructure.database.models import (
+    GroupModel,
+    GroupMemberModel,
+    NotificationModel,
+    UserModel,
 )
 
 router = APIRouter()
@@ -119,6 +127,36 @@ async def check_group_achievements(
 ):
     service = GroupAchievementService(db)
     new_achievements = await service.check_and_award_achievements(group_id)
+
+    if new_achievements:
+        group = await db.get(GroupModel, group_id)
+        if group:
+            members_stmt = select(GroupMemberModel).where(
+                GroupMemberModel.group_id == group_id
+            )
+            members = (await db.execute(members_stmt)).scalars().all()
+
+            for ea in new_achievements:
+                achievement = await service.achievement_repo.get_by_id(ea.achievement_id)
+                if achievement:
+                    for member in members:
+                        db.add(NotificationModel(
+                            user_id=member.user_id,
+                            title="Групповое достижение!",
+                            body=f"Группа «{group.name}» получила награду «{achievement.name}»",
+                            kind="group_achievement",
+                            group_id=group_id,
+                        ))
+                        user = await db.get(UserModel, member.user_id)
+                        if user and user.fcm_token:
+                            await send_or_queue(
+                                session=db,
+                                user_id=member.user_id,
+                                title="Групповое достижение!",
+                                body=f"Группа «{group.name}» получила награду «{achievement.name}»",
+                                kind="group_achievement",
+                                group_id=group_id,
+                            )
 
     return {
         "group_id": str(group_id),

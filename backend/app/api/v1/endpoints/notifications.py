@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.infrastructure.services.fcm_service import send_push_notification
+from app.infrastructure.services.scheduler_service import send_or_queue
 
 from app.core.database import get_db
 from app.infrastructure.database.models import (
@@ -126,10 +126,13 @@ async def send_notification(request: NotificationSendRequest, db: AsyncSession =
     db.add(notification)
     await db.flush()
     if user.fcm_token:
-        await send_push_notification(
-            device_token=user.fcm_token,
+        await send_or_queue(
+            session=db,
+            user_id=request.user_id,
             title=request.title,
             body=request.body,
+            kind=request.kind,
+            group_id=request.group_id,
         )
     
     return {"id": str(notification.id)}

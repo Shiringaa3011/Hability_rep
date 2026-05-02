@@ -3,8 +3,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.infrastructure.services.fcm_service import send_push_notification
 from app.core.database import get_db
+from app.infrastructure.services.scheduler_service import send_or_queue
 from app.infrastructure.database.models import (
     EarnedGroupAchievementModel,
     GroupAchievementModel,
@@ -203,8 +203,33 @@ async def leave_group(
     member = (await db.execute(member_stmt)).scalar_one_or_none()
     if member is None:
         raise HTTPException(status_code=404, detail="Member not found")
+    leaving_user = await db.get(UserModel, user_id)
     await db.delete(member)
 
+    members_stmt = select(GroupMemberModel).where(
+        GroupMemberModel.group_id == group_id,
+        GroupMemberModel.user_id != user_id,
+    )
+    remaining_members = (await db.execute(members_stmt)).scalars().all()
+
+    for m in remaining_members:
+        db.add(NotificationModel(
+            user_id=m.user_id,
+            title="Участник покинул группу",
+            body=f"{leaving_user.username} покинул группу «{group.name}»",
+            kind="group_activity",
+            group_id=group_id,
+        ))
+        u = await db.get(UserModel, m.user_id)
+        if u and u.fcm_token:
+            await send_or_queue(
+                session=db,
+                user_id=m.user_id,
+                title="Участник покинул группу",
+                body=f"{leaving_user.username} покинул группу «{group.name}»",
+                kind="group_activity",
+                group_id=group_id,
+            )
 
 @router.delete("/{group_id}/members/{member_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_member(group_id: UUID, member_id: UUID, db: AsyncSession = Depends(get_db)):
@@ -237,6 +262,17 @@ async def react_to_leader(
     )
     db.add(leader_note)
 
+    leader = await db.get(UserModel, to_user_id)
+    from_user = await db.get(UserModel, from_user_id)
+    if leader and leader.fcm_token:
+        await send_or_queue(
+            session=db,
+            user_id=to_user_id,
+            title="Поддержка лидера",
+            body=f"{from_user.username if from_user else 'Участник'} отправил вам реакцию за лидерство.",
+            kind="leader_reaction",
+            group_id=group_id,
+        )
 
 @router.post("/invites", response_model=GroupInviteResponse, status_code=status.HTTP_201_CREATED)
 async def create_invite(
@@ -288,10 +324,13 @@ async def create_invite(
     await db.flush()
     inviter = await db.get(UserModel, request.from_user_id)
     if invited_user.fcm_token:
-        await send_push_notification(
-            device_token=invited_user.fcm_token,
+        await send_or_queue(
+            session=db,
+            user_id=invited_user.id,
             title="Приглашение в группу",
             body=f"{inviter.username if inviter else 'Пользователь'} приглашает вас в группу «{group.name}»",
+            kind="group_invite",
+            group_id=group.id,
         )
     return GroupInviteResponse(
         id=invite.id,
@@ -374,6 +413,40 @@ async def decide_invite(
                 group_id=invite.group_id,
             )
         )
+        inviter = await db.get(UserModel, invite.from_user_id)
+        if inviter and inviter.fcm_token:
+            await send_or_queue(
+                session=db,
+                user_id=invite.from_user_id,
+                title="Приглашение принято",
+                body="Пользователь принял ваше приглашение в группу.",
+                kind="invite_accepted",
+                group_id=invite.group_id,
+            )
+        new_member = await db.get(UserModel, request.user_id)
+        members_stmt = select(GroupMemberModel).where(
+            GroupMemberModel.group_id == invite.group_id,
+            GroupMemberModel.user_id != request.user_id,
+        )
+        other_members = (await db.execute(members_stmt)).scalars().all()
+        for m in other_members:
+            db.add(NotificationModel(
+                user_id=m.user_id,
+                title="Новый участник",
+                body=f"{new_member.username} присоединился к группе «{group.name}»",
+                kind="group_activity",
+                group_id=invite.group_id,
+            ))
+            u = await db.get(UserModel, m.user_id)
+            if u and u.fcm_token:
+                await send_or_queue(
+                    session=db,
+                    user_id=m.user_id,
+                    title="Новый участник",
+                    body=f"{new_member.username} присоединился к группе «{group.name}»",
+                    kind="group_activity",
+                    group_id=invite.group_id,
+                )
     else:
         invite.status = "declined"
         db.add(
@@ -385,4 +458,14 @@ async def decide_invite(
                 group_id=invite.group_id,
             )
         )
+        inviter = await db.get(UserModel, invite.from_user_id)
+        if inviter and inviter.fcm_token:
+            await send_or_queue(
+                session=db,
+                user_id=invite.from_user_id,
+                title="Приглашение отклонено",
+                body="Пользователь отклонил приглашение в группу.",
+                kind="invite_declined",
+                group_id=invite.group_id,
+            )
     await db.flush()
