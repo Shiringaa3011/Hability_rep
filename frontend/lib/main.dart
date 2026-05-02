@@ -20,6 +20,18 @@ void main() async {
 
   await Firebase.initializeApp();
 
+  FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+    final authStorage = di.sl<AuthStorage>();
+    final userId = await authStorage.getUserId();
+    if (userId != null) {
+      final dio = di.sl<Dio>();
+      await dio.post('/notifications/fcm-token', data: {
+        'user_id': userId,
+        'fcm_token': newToken,
+      });
+    }
+  });
+
   final messaging = FirebaseMessaging.instance;
   await messaging.requestPermission(
     alert: true,

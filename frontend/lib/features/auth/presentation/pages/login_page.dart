@@ -5,6 +5,7 @@ import '../../../../core/design_system/theme/app_colors.dart';
 import '../../../../core/services/auth_storage.dart';
 import '../../../../injection_container.dart' as di;
 import 'register_page.dart';
+import 'verification_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -42,30 +43,16 @@ class _LoginPageState extends State<LoginPage> {
 
       if (!mounted) return;
 
-      final data = response.data as Map<String, dynamic>;
-      final authStorage = di.sl<AuthStorage>();
-      await authStorage.saveUser(
-        userId: data['user_id'] as String,
-        username: data['username'] as String? ?? _email.text.trim().split('@').first,
-        email: data['email'] as String,
+      await dio.post('/auth/send-code', data: {'email': _email.text.trim()});
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => VerificationPage(
+            email: _email.text.trim(),
+            isRegistration: false,
+          ),
+        ),
       );
-
-      try {
-        final token = await FirebaseMessaging.instance.getToken();
-        if (token != null) {
-          await dio.post('/notifications/fcm-token', data: {
-            'user_id': data['user_id'],
-            'fcm_token': token,
-          });
-        }
-      } catch (_) {}
-
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed(
-          '/home',
-          arguments: data['user_id'] as String,
-        );
-      }
     } on DioException catch (e) {
       if (!mounted) return;
       final detail = e.response?.data is Map<String, dynamic>

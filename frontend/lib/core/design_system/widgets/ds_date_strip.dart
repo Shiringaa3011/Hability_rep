@@ -31,6 +31,7 @@ class DSDateStrip extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        if (constraints.maxWidth == 0) return const SizedBox.shrink();
         return Row(
           children: days
               .map((d) => Expanded(

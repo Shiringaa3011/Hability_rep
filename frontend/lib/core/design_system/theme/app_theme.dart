@@ -117,10 +117,27 @@ class AppTheme {
         linearTrackColor: c.border,
       ),
       switchTheme: SwitchThemeData(
-        thumbColor: WidgetStatePropertyAll(c.primaryForeground),
-        trackColor: WidgetStateProperty.resolveWith(
-          (s) => s.contains(WidgetState.selected) ? c.primary : c.border,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) {
+            if (states.contains(WidgetState.disabled)) {
+              return c.mutedForeground;
+            }
+            return c.card;
+          },
         ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (states) {
+            if (states.contains(WidgetState.disabled)) {
+              return c.muted;
+            }
+            if (states.contains(WidgetState.selected)) {
+              return c.primary;
+            }
+            return c.muted;
+          },
+        ),
+        trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
       ),
       listTileTheme: ListTileThemeData(
         tileColor: c.card,

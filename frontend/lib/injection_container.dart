@@ -22,6 +22,7 @@ import 'features/gamification/presentation/bloc/group_stats/group_stats_bloc.dar
 import 'features/gamification/presentation/bloc/level/level_bloc.dart';
 import 'features/gamification/presentation/bloc/stats/stats_bloc.dart';
 
+import 'features/groups/data/datasources/group_local_datasource.dart';
 import 'features/groups/data/repositories/group_repository_impl.dart';
 import 'features/groups/domain/repositories/group_repository.dart';
 import 'features/groups/domain/usecases/get_group_details.dart';
@@ -32,6 +33,7 @@ import 'features/groups/domain/usecases/remove_member.dart';
 import 'features/groups/domain/usecases/send_reaction.dart';
 import 'features/groups/domain/usecases/create_group.dart';
 
+import 'features/home/data/datasources/habit_local_datasource.dart';
 import 'features/home/data/repositories/home_repository_impl.dart';
 import 'features/home/domain/repositories/home_repository.dart';
 import 'features/home/domain/usecases/get_home_group_filter_options.dart';
@@ -53,12 +55,17 @@ final sl = GetIt.instance;
 
 Future<void> init() async {
   sl.registerLazySingleton<Dio>(() => createDioClient());
-  
+
   sl.registerLazySingleton<HiveInterface>(() => Hive);
 
-  sl.registerLazySingleton<GroupRepository>(() => GroupRepositoryImpl(dio: sl()));
+  sl.registerLazySingleton<HabitLocalDataSource>(() => HabitLocalDataSourceImpl());
+  sl.registerLazySingleton<GroupLocalDataSource>(() => GroupLocalDataSourceImpl());
+
+  sl.registerLazySingleton<GroupRepository>(
+    () => GroupRepositoryImpl(dio: sl(), localDataSource: sl()),
+  );
   sl.registerLazySingleton<HomeRepository>(
-    () => HomeRepositoryImpl(sl(), dio: sl()),
+    () => HomeRepositoryImpl(sl(), dio: sl(), localDataSource: sl()),
   );
   sl.registerLazySingleton<NotificationsRepository>(
     () => NotificationsRepositoryImpl(dio: sl()),
@@ -113,27 +120,9 @@ Future<void> _initGamification() async {
   sl.registerLazySingleton(() => GetGroupStats(sl()));
   sl.registerLazySingleton(() => CompleteHabit(sl()));
 
-  sl.registerFactory(
-    () => LevelBloc(getUserLevel: sl()),
-  );
-
-  sl.registerFactory(
-    () => StatsBloc(
-      getUserStats: sl(),
-      getHabitsStats: sl(),
-      completeHabit: sl(),
-    ),
-  );
-
-  sl.registerFactory(
-    () => AchievementsBloc(getAchievements: sl()),
-  );
-
-  sl.registerFactory(
-    () => GroupAchievementsBloc(getGroupAchievements: sl()),
-  );
-
-  sl.registerFactory(
-    () => GroupStatsBloc(getGroupStats: sl()),
-  );
+  sl.registerFactory(() => LevelBloc(getUserLevel: sl()));
+  sl.registerFactory(() => StatsBloc(getUserStats: sl(), getHabitsStats: sl(), completeHabit: sl()));
+  sl.registerFactory(() => AchievementsBloc(getAchievements: sl()));
+  sl.registerFactory(() => GroupAchievementsBloc(getGroupAchievements: sl()));
+  sl.registerFactory(() => GroupStatsBloc(getGroupStats: sl()));
 }

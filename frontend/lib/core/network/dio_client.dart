@@ -16,13 +16,13 @@ Dio createDioClient() {
     ),
   );
 
-  dio.interceptors.add(
+  /*dio.interceptors.add(
     LogInterceptor(
       requestBody: true,
       responseBody: true,
       error: true,
     ),
-  );
+  );*/
 
   dio.interceptors.add(AuthInterceptor());
 

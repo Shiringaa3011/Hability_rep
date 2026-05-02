@@ -21,10 +21,10 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
   final _formKey = GlobalKey<FormState>();
   final _title = TextEditingController();
   final _description = TextEditingController();
-  
+
   String _frequency = 'daily';
   int? _selectedWeekday;
-  
+
   TimeOfDay? _time;
   String? _selectedGroupId;
   List<GroupEntity> _groups = [];
@@ -44,25 +44,25 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
   Future<void> _loadGroups() async {
     try {
       final allGroups = await _groupRepository.getUserGroups(widget.userId);
-      
+
       if (!mounted) return;
-      
-      final sortedGroups = List<GroupEntity>.from(allGroups);
-      sortedGroups.sort((a, b) {
-        final aAvailable = a.habitsCount < 5;
-        final bAvailable = b.habitsCount < 5;
-        if (aAvailable && !bAvailable) return -1;
-        if (!aAvailable && bAvailable) return 1;
-        return 0;
-      });
-      
+
+      final sortedGroups = List<GroupEntity>.from(allGroups)
+        ..sort((a, b) {
+          final aAvailable = a.habitsCount < 5;
+          final bAvailable = b.habitsCount < 5;
+          if (aAvailable && !bAvailable) return -1;
+          if (!aAvailable && bAvailable) return 1;
+          return 0;
+        });
+
       if (!mounted) return;
-      
+
       setState(() {
         _groups = sortedGroups;
         _loading = false;
       });
-    } catch (e, stackTrace) {
+    } catch (_) {
       if (!mounted) return;
       setState(() => _loading = false);
     }
@@ -91,37 +91,46 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
     if (t != null) setState(() => _reminderTime = t);
   }
 
-  String? _fmt(TimeOfDay? t) =>
-      t == null ? null : '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+  String? _fmt(TimeOfDay? t) => t == null
+      ? null
+      : '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    
+
     if (_frequency == 'weekly' && _selectedWeekday == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Выберите день недели')),
       );
       return;
     }
-    
+
     final habit = TodayHabitEntity(
       id: 'h_${DateTime.now().millisecondsSinceEpoch}',
       title: _title.text.trim(),
-      description: _description.text.trim().isEmpty ? null : _description.text.trim(),
+      description:
+          _description.text.trim().isEmpty ? null : _description.text.trim(),
       scheduledTimeLabel: _fmt(_time),
       frequencyLabel: _frequency == 'daily' ? 'Ежедневно' : 'Еженедельно',
       groupId: _selectedGroupId,
       groupName: _selectedGroupId != null
-          ? _groups.firstWhere(
-              (g) => g.id == _selectedGroupId,
-              orElse: () => GroupEntity(id: '', name: '', createdBy: '', createdAt: DateTime.now()),
-            ).name
+          ? _groups
+              .firstWhere(
+                (g) => g.id == _selectedGroupId,
+                orElse: () => GroupEntity(
+                  id: '',
+                  name: '',
+                  createdBy: '',
+                  createdAt: DateTime.now(),
+                ),
+              )
+              .name
           : null,
       remindersEnabled: _reminders,
       reminderTimeLabel: _reminders ? _fmt(_reminderTime) : null,
       dayOfWeek: _frequency == 'weekly' ? _selectedWeekday : null,
     );
-    
+
     await di.sl<UpsertHabitDefinition>()(widget.userId, habit);
     if (!mounted) return;
     Navigator.of(context).pop(true);
@@ -130,7 +139,7 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    
+
     if (_loading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -193,8 +202,8 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
             if (_frequency == 'weekly') ...[
+              const SizedBox(height: 16),
               Text(
                 'День недели',
                 style: AppTextStyles.bodySmall?.copyWith(
@@ -208,9 +217,8 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
                 runSpacing: 8,
                 children: _buildWeekdayButtons(),
               ),
-              const SizedBox(height: 16),
             ],
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
@@ -228,7 +236,9 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
                       Text(
                         _fmt(_time) ?? 'Не задано',
                         style: AppTextStyles.bodyMedium?.copyWith(
-                          color: _time != null ? colors.foreground : colors.mutedForeground,
+                          color: _time != null
+                              ? colors.foreground
+                              : colors.mutedForeground,
                         ),
                       ),
                     ],
@@ -242,6 +252,8 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String?>(
+              isExpanded: true,
+              value: _selectedGroupId,
               hint: const Text('Выберите группу'),
               decoration: const InputDecoration(
                 labelText: 'Группа',
@@ -258,26 +270,33 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
                     value: group.id,
                     enabled: isAvailable,
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Flexible(child: Text(group.name)),
-                        if (!isAvailable)
+                        Flexible(
+                          child: Text(
+                            group.name,
+                            overflow: TextOverflow.ellipsis,
+                            style: isAvailable
+                                ? null
+                                : TextStyle(color: colors.mutedForeground),
+                          ),
+                        ),
+                        if (!isAvailable) ...[
+                          const SizedBox(width: 6),
                           Text(
-                            'лимит 5 привычек',
+                            'лимит 5',
                             style: TextStyle(
                               fontSize: 12,
                               color: colors.mutedForeground,
                             ),
                           ),
+                        ],
                       ],
                     ),
                   );
                 }),
               ],
-              onChanged: (value) {
-                setState(() {
-                  _selectedGroupId = value;
-                });
-              },
+              onChanged: (value) => setState(() => _selectedGroupId = value),
             ),
             const SizedBox(height: 16),
             Text(
@@ -317,7 +336,9 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
                         Text(
                           _fmt(_reminderTime) ?? 'Не выбрано',
                           style: AppTextStyles.bodyMedium?.copyWith(
-                            color: _reminderTime != null ? colors.foreground : colors.mutedForeground,
+                            color: _reminderTime != null
+                                ? colors.foreground
+                                : colors.mutedForeground,
                           ),
                         ),
                       ],
@@ -358,7 +379,8 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? colors.primaryForeground : colors.foreground,
+              color:
+                  isSelected ? colors.primaryForeground : colors.foreground,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -373,7 +395,7 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
       final weekdayValue = index + 1;
       final isSelected = _selectedWeekday == weekdayValue;
       final shortName = getWeekdayNameByValue(weekdayValue, short: true);
-      
+
       return GestureDetector(
         onTap: () => setState(() => _selectedWeekday = weekdayValue),
         child: Container(
@@ -387,7 +409,8 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
             child: Text(
               shortName,
               style: TextStyle(
-                color: isSelected ? colors.primaryForeground : colors.foreground,
+                color:
+                    isSelected ? colors.primaryForeground : colors.foreground,
                 fontWeight: FontWeight.w500,
               ),
             ),

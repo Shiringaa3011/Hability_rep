@@ -28,3 +28,6 @@ app.*.map.json
 .dart_tool
 .metadata
 *.iml
+
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist

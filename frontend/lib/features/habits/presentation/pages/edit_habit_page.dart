@@ -29,10 +29,10 @@ class _EditHabitPageState extends State<EditHabitPage> {
   final _formKey = GlobalKey<FormState>();
   final _title = TextEditingController();
   final _description = TextEditingController();
-  
+
   String _frequency = 'daily';
   int? _selectedWeekday;
-  
+
   TimeOfDay? _time;
   String? _groupId;
   String? _groupName;
@@ -47,12 +47,13 @@ class _EditHabitPageState extends State<EditHabitPage> {
     super.initState();
     _bootstrap();
   }
+
   Future<void> _bootstrap() async {
     try {
       final habit = await di.sl<GetHabitById>()(widget.habitId);
       final groups = await di.sl<GetHomeGroupFilterOptions>()(widget.userId);
       if (!mounted) return;
-      
+
       if (habit == null) {
         setState(() {
           _loadError = true;
@@ -60,19 +61,17 @@ class _EditHabitPageState extends State<EditHabitPage> {
         });
         return;
       }
-      
+
       _title.text = habit.title;
       _description.text = habit.description ?? '';
-
       _frequency = habit.frequencyLabel == 'Еженедельно' ? 'weekly' : 'daily';
       _selectedWeekday = habit.dayOfWeek;
-      
       _time = _parseTime(habit.scheduledTimeLabel);
       _groupId = habit.groupId;
       _groupName = habit.groupName;
       _reminders = habit.remindersEnabled;
       _reminderTime = _parseTime(habit.reminderTimeLabel);
-      
+
       setState(() {
         _groups = groups.where((g) => g.groupId != null).toList();
         _loading = false;
@@ -86,6 +85,7 @@ class _EditHabitPageState extends State<EditHabitPage> {
       });
     }
   }
+
   TimeOfDay? _parseTime(String? s) {
     if (s == null || !s.contains(':')) return null;
     final p = s.split(':');
@@ -118,8 +118,9 @@ class _EditHabitPageState extends State<EditHabitPage> {
     if (t != null) setState(() => _reminderTime = t);
   }
 
-  String? _fmt(TimeOfDay? t) =>
-      t == null ? null : '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+  String? _fmt(TimeOfDay? t) => t == null
+      ? null
+      : '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
@@ -130,11 +131,12 @@ class _EditHabitPageState extends State<EditHabitPage> {
       );
       return;
     }
-    
+
     final habit = TodayHabitEntity(
       id: widget.habitId,
       title: _title.text.trim(),
-      description: _description.text.trim().isEmpty ? null : _description.text.trim(),
+      description:
+          _description.text.trim().isEmpty ? null : _description.text.trim(),
       scheduledTimeLabel: _fmt(_time),
       frequencyLabel: _frequency == 'daily' ? 'Ежедневно' : 'Еженедельно',
       groupId: _groupId,
@@ -148,53 +150,59 @@ class _EditHabitPageState extends State<EditHabitPage> {
     Navigator.of(context).pop(true);
   }
 
-Future<void> _deleteHabit() async {
-  final colors = context.appColors;
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text('Удалить привычку?', style: TextStyle(color: colors.foreground)),
-      content: Text('Это действие нельзя отменить.', style: TextStyle(color: colors.mutedForeground)),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(ctx).pop(false),
-          child: Text('Нет', style: TextStyle(color: colors.mutedForeground)),
+  Future<void> _deleteHabit() async {
+    final colors = context.appColors;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          'Удалить привычку?',
+          style: TextStyle(color: colors.foreground),
         ),
-        OutlinedButton(
-          onPressed: () => Navigator.of(ctx).pop(true),
-          style: OutlinedButton.styleFrom(
-            side: BorderSide(color: colors.destructive),
-            foregroundColor: colors.destructive,
+        content: Text(
+          'Это действие нельзя отменить.',
+          style: TextStyle(color: colors.mutedForeground),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('Нет', style: TextStyle(color: colors.mutedForeground)),
           ),
-          child: const Text('Да'),
-        ),
-      ],
-    ),
-  );
+          OutlinedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: colors.destructive),
+              foregroundColor: colors.destructive,
+            ),
+            child: const Text('Да'),
+          ),
+        ],
+      ),
+    );
 
-  if (confirmed != true) return;
+    if (confirmed != true) return;
 
-  try {
-    await di.sl<DeleteHabitUseCase>()(widget.habitId, widget.userId);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Привычка удалена')),
-      );
-      Navigator.of(context).pop(true);
-    }
-  } catch (e) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка: $e')),
-      );
+    try {
+      await di.sl<DeleteHabitUseCase>()(widget.habitId, widget.userId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Привычка удалена')),
+        );
+        Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка: $e')),
+        );
+      }
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    
+
     if (_loading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -207,7 +215,9 @@ Future<void> _deleteHabit() async {
         body: const Center(child: Text('Привычка не найдена')),
       );
     }
+
     final canSave = _title.text.trim().isNotEmpty;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Изменить привычку')),
       body: Form(
@@ -262,8 +272,8 @@ Future<void> _deleteHabit() async {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
             if (_frequency == 'weekly') ...[
+              const SizedBox(height: 16),
               Text(
                 'День недели',
                 style: AppTextStyles.bodySmall?.copyWith(
@@ -277,9 +287,8 @@ Future<void> _deleteHabit() async {
                 runSpacing: 8,
                 children: _buildWeekdayButtons(),
               ),
-              const SizedBox(height: 16),
             ],
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
@@ -297,7 +306,9 @@ Future<void> _deleteHabit() async {
                       Text(
                         _fmt(_time) ?? 'Не задано',
                         style: AppTextStyles.bodyMedium?.copyWith(
-                          color: _time != null ? colors.foreground : colors.mutedForeground,
+                          color: _time != null
+                              ? colors.foreground
+                              : colors.mutedForeground,
                         ),
                       ),
                     ],
@@ -311,10 +322,11 @@ Future<void> _deleteHabit() async {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String?>(
+              isExpanded: true,
               value: _groupId,
               decoration: InputDecoration(
                 labelText: 'Группа',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
                 helperText: 'Группу нельзя изменить после создания привычки',
                 helperStyle: TextStyle(
                   fontSize: 12,
@@ -326,12 +338,12 @@ Future<void> _deleteHabit() async {
               items: [
                 const DropdownMenuItem<String?>(
                   value: null,
-                  child: Text('Личная привычка'),
+                  child: Text('Личная привычка', overflow: TextOverflow.ellipsis),
                 ),
                 ..._groups.map(
                   (g) => DropdownMenuItem<String?>(
                     value: g.groupId,
-                    child: Text(g.title),
+                    child: Text(g.title, overflow: TextOverflow.ellipsis),
                   ),
                 ),
               ],
@@ -376,7 +388,9 @@ Future<void> _deleteHabit() async {
                         Text(
                           _fmt(_reminderTime) ?? 'Не выбрано',
                           style: AppTextStyles.bodyMedium?.copyWith(
-                            color: _reminderTime != null ? colors.foreground : colors.mutedForeground,
+                            color: _reminderTime != null
+                                ? colors.foreground
+                                : colors.mutedForeground,
                           ),
                         ),
                       ],
@@ -426,7 +440,8 @@ Future<void> _deleteHabit() async {
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? colors.primaryForeground : colors.foreground,
+              color:
+                  isSelected ? colors.primaryForeground : colors.foreground,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -441,7 +456,7 @@ Future<void> _deleteHabit() async {
       final weekdayValue = index + 1;
       final isSelected = _selectedWeekday == weekdayValue;
       final shortName = getWeekdayNameByValue(weekdayValue, short: true);
-      
+
       return GestureDetector(
         onTap: () => setState(() => _selectedWeekday = weekdayValue),
         child: Container(
@@ -455,7 +470,8 @@ Future<void> _deleteHabit() async {
             child: Text(
               shortName,
               style: TextStyle(
-                color: isSelected ? colors.primaryForeground : colors.foreground,
+                color:
+                    isSelected ? colors.primaryForeground : colors.foreground,
                 fontWeight: FontWeight.w500,
               ),
             ),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/design_system/theme/app_colors.dart';
 import '../../../../core/services/auth_storage.dart';
 import '../../../../injection_container.dart' as di;
+import 'verification_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -44,33 +45,16 @@ class _RegisterPageState extends State<RegisterPage> {
       );
       if (!mounted) return;
 
-      final data = response.data as Map<String, dynamic>;
-      final authStorage = di.sl<AuthStorage>();
-      await authStorage.saveUser(
-        userId: data['user_id'] as String,
-        username: data['username'] as String? ?? _email.text.trim().split('@').first,
-        email: data['email'] as String,
+      await dio.post('/auth/send-code', data: {'email': _email.text.trim()});
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => VerificationPage(
+            email: _email.text.trim(),
+            isRegistration: true,
+          ),
+        ),
       );
-
-      try {
-        final token = await FirebaseMessaging.instance.getToken();
-        if (token != null) {
-          await dio.post('/notifications/fcm-token', data: {
-            'user_id': data['user_id'],
-            'fcm_token': token,
-          });
-        }
-      } catch (_) {}
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Регистрация успешна!')),
-        );
-        Navigator.of(context).pushReplacementNamed(
-          '/home',
-          arguments: data['user_id'] as String,
-        );
-      }
     } on DioException catch (e) {
       if (!mounted) return;
       final detail = e.response?.data is Map<String, dynamic>

@@ -3,3 +3,4 @@
 **/frontend/web
 *.iml
 .idea
+.env

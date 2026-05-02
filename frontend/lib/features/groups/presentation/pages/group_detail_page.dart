@@ -155,14 +155,14 @@ class _GroupDetailView extends StatelessWidget {
   ),
   const SizedBox(height: 12),
   OutlinedButton.icon(
-  onPressed: () => _showDeleteGroupDialog(context),
-  icon: const Icon(Icons.delete_outline, color: Colors.red),
-  label: const Text('Удалить группу', style: TextStyle(color: Colors.red)),
-  style: OutlinedButton.styleFrom(
-    backgroundColor: colors.card,
-    side: const BorderSide(color: Colors.red),
+    onPressed: () => _showDeleteGroupDialog(context),
+    icon: const Icon(Icons.delete_outline, color: Colors.red),
+    label: const Text('Удалить группу', style: TextStyle(color: Colors.red)),
+    style: ButtonStyle(
+      backgroundColor: WidgetStatePropertyAll(colors.card),
+      side: const WidgetStatePropertyAll(BorderSide(color: Colors.red)),
+    ),
   ),
-),
   const SizedBox(height: 12),
 ],
                           if (state.leader != null &&
@@ -270,18 +270,29 @@ class _InviteSheetState extends State<_InviteSheet> {
     _controller.dispose();
     super.dispose();
   }
+bool _noResults = false;
 
-  Future<void> _search(String query) async {
-    if (query.length < 2) {
-      setState(() => _results = []);
-      return;
-    }
-    try {
-      final results = await widget.repository.searchUsers(query);
-      setState(() => _results = results);
-    } catch (_) {}
+Future<void> _search(String query) async {
+  if (query.length < 2) {
+    setState(() {
+      _results = [];
+      _noResults = false;
+    });
+    return;
   }
-
+  try {
+    final results = await widget.repository.searchUsers(query);
+    setState(() {
+      _results = results;
+      _noResults = results.isEmpty;
+    });
+  } catch (_) {
+    setState(() {
+      _results = [];
+      _noResults = true;
+    });
+  }
+}
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
@@ -358,6 +369,15 @@ class _InviteSheetState extends State<_InviteSheet> {
               },
             )),
           ],
+          if (_noResults && _controller.text.length >= 2)
+  Padding(
+    padding: const EdgeInsets.symmetric(vertical: 16),
+    child: Text(
+      'Пользователь не найден',
+      style: AppTextStyles.bodyMedium?.copyWith(color: colors.mutedForeground),
+      textAlign: TextAlign.center,
+    ),
+  ),
           const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),

@@ -5,28 +5,44 @@ import '../../domain/entities/group_entity.dart';
 import '../../domain/entities/group_member_entity.dart';
 import '../../domain/repositories/group_repository.dart';
 import '../../domain/entities/group_invite_entity.dart';
+import '../datasources/group_local_datasource.dart';
 
 class GroupRepositoryImpl implements GroupRepository {
-  GroupRepositoryImpl({required this.dio});
+  GroupRepositoryImpl({
+    required this.dio,
+    required this.localDataSource,
+  });
 
   final Dio dio;
+  final GroupLocalDataSource localDataSource;
 
   @override
   Future<List<GroupEntity>> getUserGroups(String userId) async {
-    final response = await dio.get('${ApiConstants.groupsPath}/user/$userId');
-    final rows = response.data as List<dynamic>;
-    return rows.map((e) {
-      final m = e as Map<String, dynamic>;
-      return GroupEntity(
-        id: m['id'] as String,
-        name: m['name'] as String,
-        description: m['description'] as String?,
-        createdBy: m['created_by'] as String,
-        createdAt: DateTime.parse(m['created_at'] as String),
-        isActive: m['is_active'] as bool? ?? true,
-        habitsCount: m['habits_count'] as int? ?? 0,
-      );
-    }).toList();
+    final cached = localDataSource.getCachedGroups(userId);
+
+    try {
+      final response = await dio.get('${ApiConstants.groupsPath}/user/$userId');
+      final rows = response.data as List<dynamic>;
+      final groups = rows.map((e) {
+        final m = e as Map<String, dynamic>;
+        return GroupEntity(
+          id: m['id'] as String,
+          name: m['name'] as String,
+          description: m['description'] as String?,
+          createdBy: m['created_by'] as String,
+          createdAt: DateTime.parse(m['created_at'] as String),
+          isActive: m['is_active'] as bool? ?? true,
+          habitsCount: m['habits_count'] as int? ?? 0,
+        );
+      }).toList();
+
+      await localDataSource.cacheGroups(userId, groups);
+
+      return groups;
+    } catch (e) {
+      if (cached != null) return cached;
+      rethrow;
+    }
   }
 
   @override
@@ -72,6 +88,7 @@ class GroupRepositoryImpl implements GroupRepository {
       '${ApiConstants.groupsPath}/$groupId/leave',
       queryParameters: {'user_id': userId},
     );
+    await localDataSource.invalidateGroups(userId);
   }
 
   @override
@@ -109,6 +126,9 @@ class GroupRepositoryImpl implements GroupRepository {
       },
     );
     final m = response.data as Map<String, dynamic>;
+    
+    await localDataSource.invalidateGroups(creatorUserId);
+    
     return GroupEntity(
       id: m['id'] as String,
       name: m['name'] as String,
