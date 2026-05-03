@@ -1,4 +1,7 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../../core/error/exceptions.dart';
 import '../../domain/usecases/get_user_groups.dart';
 import 'groups_event.dart';
 import 'groups_state.dart';
@@ -17,11 +20,13 @@ class GroupsBloc extends Bloc<GroupsEvent, GroupsState> {
       try {
         final groups = await _getUserGroups(event.userId);
         emit(state.copyWith(groups: groups, isLoading: false, clearError: true));
+      } on DioException catch (e) {
+        emit(state.copyWith(isLoading: false, error: fromDioException(e).message));
       } catch (e) {
-        emit(state.copyWith(isLoading: false, error: e.toString()));
+        emit(state.copyWith(isLoading: false, error: 'Что-то пошло не так'));
       }
     });
-    
+
     on<RefreshGroups>((event, emit) async {
       add(LoadUserGroups(event.userId));
     });

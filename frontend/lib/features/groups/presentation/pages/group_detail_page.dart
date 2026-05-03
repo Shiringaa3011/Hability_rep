@@ -14,6 +14,7 @@ import '../widgets/member_list_item.dart';
 import '../widgets/reaction_button.dart';
 import '../../../../core/design_system/theme/app_colors.dart';
 import '../../../../core/design_system/theme/app_text_styles.dart';
+import '../../../../core/error/error_screen.dart';
 
 class GroupDetailPage extends StatelessWidget {
   final String groupId;
@@ -76,7 +77,15 @@ class _GroupDetailView extends StatelessWidget {
           body: state.isLoading && detail == null
               ? const Center(child: CircularProgressIndicator())
               : detail == null
-                  ? Center(child: Text(state.error ?? 'Нет данных'))
+                  ? AppErrorWidget(
+                      message: state.error ?? 'Не удалось загрузить данные группы',
+                      onRetry: () => context.read<GroupDetailBloc>().add(
+                            LoadGroupDetail(
+                              groupId: state.groupId,
+                              currentUserId: state.currentUserId,
+                            ),
+                          ),
+                    )
                   : RefreshIndicator(
                       onRefresh: () async {
                         context.read<GroupDetailBloc>().add(

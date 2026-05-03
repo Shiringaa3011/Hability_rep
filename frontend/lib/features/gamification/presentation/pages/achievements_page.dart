@@ -11,6 +11,7 @@ import '../bloc/achievements/achievements_state.dart';
 import '../bloc/level/level_bloc.dart';
 import '../bloc/level/level_event.dart';
 import '../bloc/level/level_state.dart';
+import '../../../../core/error/error_screen.dart';
 
 class AchievementsPage extends StatelessWidget {
   const AchievementsPage({required this.userId, super.key});
@@ -26,13 +27,14 @@ class AchievementsPage extends StatelessWidget {
           create: (_) => di.sl<AchievementsBloc>()..add(LoadAchievements(userId)),
         ),
       ],
-      child: const _AchievementsScaffold(),
+      child: _AchievementsScaffold(userId: userId),
     );
   }
 }
 
 class _AchievementsScaffold extends StatelessWidget {
-  const _AchievementsScaffold();
+  const _AchievementsScaffold({required this.userId});
+  final String userId;
 
   @override
   Widget build(BuildContext context) {
@@ -46,14 +48,14 @@ class _AchievementsScaffold extends StatelessWidget {
           AppSpacing.xl,
           AppSpacing.bottomNavReserve,
         ),
-        children: const [
-          _Title(),
-          SizedBox(height: AppSpacing.xl),
-          _LevelBlock(),
-          SizedBox(height: AppSpacing.xl),
-          _EarnedSection(),
-          SizedBox(height: AppSpacing.xl),
-          _AllAchievementsSection(),
+        children: [
+          const _Title(),
+          const SizedBox(height: AppSpacing.xl),
+          const _LevelBlock(),
+          const SizedBox(height: AppSpacing.xl),
+          const _EarnedSection(),
+          const SizedBox(height: AppSpacing.xl),
+          _AllAchievementsSection(userId: userId),
         ],
       ),
     );
@@ -82,11 +84,8 @@ class _LevelBlock extends StatelessWidget {
       builder: (context, state) {
         if (state is LevelLoaded) return _LevelView(level: state.level);
         if (state is LevelError) {
-          return Text(
-            state.message,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: context.appColors.destructive,
-            ),
+          return AppErrorWidget(
+            message: 'Не удалось загрузить уровень',
           );
         }
         return const SizedBox(
@@ -179,8 +178,8 @@ class _EarnedSection extends StatelessWidget {
 }
 
 class _AllAchievementsSection extends StatelessWidget {
-  const _AllAchievementsSection();
-
+  const _AllAchievementsSection({required this.userId});
+  final String userId;
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AchievementsBloc, AchievementsState>(
@@ -189,11 +188,9 @@ class _AllAchievementsSection extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
         if (state is AchievementsError) {
-          return Text(
-            state.message,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: context.appColors.destructive,
-            ),
+          return AppErrorWidget(
+            message: 'Не удалось загрузить достижения',
+            onRetry: () => context.read<AchievementsBloc>().add(LoadAchievements(userId)),
           );
         }
         if (state is! AchievementsLoaded) return const SizedBox.shrink();

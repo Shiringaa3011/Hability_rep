@@ -8,6 +8,7 @@ import '../bloc/stats/stats_bloc.dart';
 import '../bloc/stats/stats_event.dart';
 import '../bloc/stats/stats_state.dart';
 import '../widgets/charts/habit_timeline_bar_chart.dart';
+import '../../../../core/error/error_screen.dart';
 
 class StatsPage extends StatelessWidget {
   const StatsPage({required this.userId, super.key});
@@ -50,8 +51,8 @@ class _StatsScaffoldState extends State<_StatsScaffold> {
             return const Center(child: CircularProgressIndicator());
           }
           if (state is StatsError) {
-            return _ErrorView(
-              message: state.message,
+            return AppErrorWidget(
+              message: 'Не удалось загрузить статистику',
               onRetry: () => context
                   .read<StatsBloc>()
                   .add(LoadStats(userId: widget.userId, period: _period)),
@@ -371,7 +372,7 @@ class _HabitStatCard extends StatelessWidget {
   }
 }
 
-class _ErrorView extends StatelessWidget {
+/*class _ErrorView extends StatelessWidget {
   const _ErrorView({required this.message, required this.onRetry});
 
   final String message;
@@ -398,3 +399,4 @@ class _ErrorView extends StatelessWidget {
     );
   }
 }
+*/

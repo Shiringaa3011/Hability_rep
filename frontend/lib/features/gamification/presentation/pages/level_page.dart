@@ -6,6 +6,7 @@ import '../../domain/entities/user_level.dart';
 import '../bloc/level/level_bloc.dart';
 import '../bloc/level/level_event.dart';
 import '../bloc/level/level_state.dart';
+import '../../../../core/error/error_screen.dart';
 
 class LevelPage extends StatefulWidget {
   const LevelPage({required this.userId, super.key});
@@ -36,29 +37,9 @@ class _LevelPageState extends State<LevelPage> {
             return const Center(child: CircularProgressIndicator());
           }
           if (state is LevelError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.xl),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.error_outline, size: 48, color: colors.destructive),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      state.message,
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.bodyMedium,
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    DSButton(
-                      label: 'Повторить',
-                      onPressed: () => context
-                          .read<LevelBloc>()
-                          .add(LoadLevel(widget.userId)),
-                    ),
-                  ],
-                ),
-              ),
+            return AppErrorWidget(
+              message: 'Не удалось загрузить уровень',
+              onRetry: () => context.read<LevelBloc>().add(LoadLevel(widget.userId)),
             );
           }
           if (state is LevelLoaded) {

@@ -1,5 +1,7 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/error/exceptions.dart';
 import '../../domain/usecases/get_home_group_filter_options.dart';
 import '../../domain/usecases/get_today_habits_for_day.dart';
 import '../../domain/usecases/toggle_habit_completion.dart';
@@ -47,8 +49,10 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         isLoading: false,
         clearError: true,
       ));
+    } on DioException catch (e) {
+      emit(state.copyWith(isLoading: false, error: fromDioException(e).message));
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: e.toString()));
+      emit(state.copyWith(isLoading: false, error: 'Что-то пошло не так'));
     }
   }
 
@@ -61,15 +65,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         groupId: state.selectedGroupId,
       );
       emit(state.copyWith(habits: habits, isLoading: false, clearError: true));
+    } on DioException catch (e) {
+      emit(state.copyWith(isLoading: false, error: fromDioException(e).message));
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: e.toString()));
+      emit(state.copyWith(isLoading: false, error: 'Что-то пошло не так'));
     }
   }
 
-  Future<void> _onGroup(
-    HomeGroupFilterSelected event,
-    Emitter<HomeState> emit,
-  ) async {
+  Future<void> _onGroup(HomeGroupFilterSelected event, Emitter<HomeState> emit) async {
     emit(state.copyWith(
       selectedGroupId: event.groupId,
       isLoading: true,
@@ -82,8 +85,10 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         groupId: event.groupId,
       );
       emit(state.copyWith(habits: habits, isLoading: false, clearError: true));
+    } on DioException catch (e) {
+      emit(state.copyWith(isLoading: false, error: fromDioException(e).message));
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: e.toString()));
+      emit(state.copyWith(isLoading: false, error: 'Что-то пошло не так'));
     }
   }
 
@@ -121,8 +126,10 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         groupId: state.selectedGroupId,
       );
       emit(state.copyWith(habits: freshHabits, clearError: true));
+    } on DioException catch (e) {
+      emit(state.copyWith(habits: oldHabits, error: fromDioException(e).message));
     } catch (e) {
-      emit(state.copyWith(habits: oldHabits, error: e.toString()));
+      emit(state.copyWith(habits: oldHabits, error: 'Что-то пошло не так'));
     }
   }
 }

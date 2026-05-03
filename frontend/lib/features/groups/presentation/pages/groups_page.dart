@@ -9,6 +9,7 @@ import '../bloc/groups_event.dart';
 import '../bloc/groups_state.dart';
 import 'create_group_page.dart';
 import 'group_detail_page.dart';
+import '../../../../core/error/error_screen.dart';
 
 class GroupsPage extends StatelessWidget {
   const GroupsPage({required this.userId, super.key});
@@ -62,11 +63,9 @@ class _GroupsScaffold extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (state.error != null && state.groups.isEmpty) {
-            return Center(
-              child: Text(
-                'Ошибка: ${state.error}',
-                style: AppTextStyles.bodyMedium.copyWith(color: colors.destructive),
-              ),
+            return AppErrorWidget(
+              message: 'Не удалось загрузить группы',
+              onRetry: () => context.read<GroupsBloc>().add(RefreshGroups(userId)),
             );
           }
           return RefreshIndicator(

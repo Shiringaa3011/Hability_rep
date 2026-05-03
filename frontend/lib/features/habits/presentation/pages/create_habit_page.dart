@@ -139,9 +139,16 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
       dayOfWeek: _frequency == 'weekly' ? _selectedWeekday : null,
     );
 
-    await di.sl<UpsertHabitDefinition>()(widget.userId, habit);
-    if (!mounted) return;
-    Navigator.of(context).pop(true);
+    try {
+      await di.sl<UpsertHabitDefinition>()(widget.userId, habit);
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Не удалось сохранить привычку. Проверьте подключение к интернету.')),
+      );
+    }
   }
 
   @override

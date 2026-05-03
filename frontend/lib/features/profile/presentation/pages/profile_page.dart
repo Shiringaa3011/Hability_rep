@@ -540,7 +540,10 @@ class _PendingInvitesSectionState extends State<_PendingInvitesSection> {
         _loading = false;
       });
     } catch (_) {
-      setState(() => _loading = false);
+      setState(() {
+        _invites = null;
+        _loading = false;
+      });
     }
   }
 
@@ -548,12 +551,16 @@ class _PendingInvitesSectionState extends State<_PendingInvitesSection> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     if (_loading) return const SizedBox.shrink();
-    if (_invites == null || _invites!.isEmpty) {
+    if (_invites == null) {
+      return Text(
+        'Не удалось загрузить приглашения',
+        style: AppTextStyles.caption.copyWith(color: colors.mutedForeground),
+      );
+    }
+    if (_invites!.isEmpty) {
       return Text(
         'Нет активных приглашений',
-        style: AppTextStyles.caption.copyWith(
-          color: colors.mutedForeground,
-        ),
+        style: AppTextStyles.caption.copyWith(color: colors.mutedForeground),
       );
     }
     return Column(

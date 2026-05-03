@@ -8,6 +8,7 @@ import '../../domain/entities/user_stats.dart';
 import '../bloc/group_stats/group_stats_bloc.dart';
 import '../bloc/group_stats/group_stats_event.dart';
 import '../bloc/group_stats/group_stats_state.dart';
+import '../../../../core/error/error_screen.dart';
 
 class GroupStatsPage extends StatelessWidget {
   const GroupStatsPage({required this.groupId, super.key});
@@ -55,8 +56,8 @@ class _GroupStatsScaffoldState extends State<_GroupStatsScaffold> {
             return const Center(child: CircularProgressIndicator());
           }
           if (state is GroupStatsError) {
-            return _ErrorView(
-              message: state.message,
+            return AppErrorWidget(
+              message: 'Не удалось загрузить статистику группы',
               onRetry: () => context.read<GroupStatsBloc>().add(
                     LoadGroupStats(groupId: widget.groupId, period: _period),
                   ),
@@ -344,7 +345,7 @@ class _EmptyMembersCard extends StatelessWidget {
     );
   }
 }
-
+/*
 class _ErrorView extends StatelessWidget {
   const _ErrorView({required this.message, required this.onRetry});
 
@@ -371,3 +372,4 @@ class _ErrorView extends StatelessWidget {
     );
   }
 }
+*/

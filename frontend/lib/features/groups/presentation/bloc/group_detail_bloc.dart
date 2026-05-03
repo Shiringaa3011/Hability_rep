@@ -1,5 +1,7 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/error/exceptions.dart';
 import '../../domain/repositories/group_repository.dart';
 import '../../domain/usecases/get_group_details.dart';
 import '../../domain/usecases/leave_group.dart';
@@ -51,8 +53,10 @@ class GroupDetailBloc extends Bloc<GroupDetailEvent, GroupDetailState> {
           clearMessage: false,
         ),
       );
+    } on DioException catch (e) {
+      emit(state.copyWith(isLoading: false, error: fromDioException(e).message));
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: e.toString()));
+      emit(state.copyWith(isLoading: false, error: 'Что-то пошло не так'));
     }
   }
 
@@ -70,13 +74,10 @@ class GroupDetailBloc extends Bloc<GroupDetailEvent, GroupDetailState> {
           clearError: true,
         ),
       );
+    } on DioException catch (e) {
+      emit(state.copyWith(isLoading: false, error: fromDioException(e).message));
     } catch (e) {
-      emit(
-        state.copyWith(
-          isLoading: false,
-          error: e.toString(),
-        ),
-      );
+      emit(state.copyWith(isLoading: false, error: 'Что-то пошло не так'));
     }
   }
 
@@ -85,11 +86,7 @@ class GroupDetailBloc extends Bloc<GroupDetailEvent, GroupDetailState> {
     Emitter<GroupDetailState> emit,
   ) async {
     if (!state.canLeave) {
-      emit(
-        state.copyWith(
-          error: 'Создатель не может выйти из группы',
-        ),
-      );
+      emit(state.copyWith(error: 'Создатель не может выйти из группы'));
       return;
     }
     emit(state.copyWith(isLoading: true, clearError: true));
@@ -102,8 +99,10 @@ class GroupDetailBloc extends Bloc<GroupDetailEvent, GroupDetailState> {
           clearMessage: false,
         ),
       );
+    } on DioException catch (e) {
+      emit(state.copyWith(isLoading: false, error: fromDioException(e).message));
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: e.toString()));
+      emit(state.copyWith(isLoading: false, error: 'Что-то пошло не так'));
     }
   }
 
@@ -117,8 +116,10 @@ class GroupDetailBloc extends Bloc<GroupDetailEvent, GroupDetailState> {
       await _removeMember(state.groupId, event.memberId);
       final detail = await _getGroupDetails(state.groupId, state.currentUserId);
       emit(state.copyWith(isLoading: false, detail: detail, clearError: true));
+    } on DioException catch (e) {
+      emit(state.copyWith(isLoading: false, error: fromDioException(e).message));
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: e.toString()));
+      emit(state.copyWith(isLoading: false, error: 'Что-то пошло не так'));
     }
   }
 
@@ -141,12 +142,14 @@ class GroupDetailBloc extends Bloc<GroupDetailEvent, GroupDetailState> {
         state.copyWith(
           isLoading: false,
           detail: detail,
-          successMessage: 'Реакция отправлена (mock)',
+          successMessage: 'Реакция отправлена',
           clearMessage: false,
         ),
       );
+    } on DioException catch (e) {
+      emit(state.copyWith(isLoading: false, error: fromDioException(e).message));
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: e.toString()));
+      emit(state.copyWith(isLoading: false, error: 'Что-то пошло не так'));
     }
   }
 }

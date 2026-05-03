@@ -158,9 +158,16 @@ class _EditHabitPageState extends State<EditHabitPage> {
       reminderTimeLabel: _reminders ? _fmtToUtc(_reminderTime) : null,
       dayOfWeek: _frequency == 'weekly' ? _selectedWeekday : null,
     );
-    await di.sl<UpsertHabitDefinition>()(widget.userId, habit);
-    if (!mounted) return;
-    Navigator.of(context).pop(true);
+    try {
+      await di.sl<UpsertHabitDefinition>()(widget.userId, habit);
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Не удалось сохранить изменения. Проверьте подключение к интернету.')),
+      );
+    }
   }
 
   Future<void> _deleteHabit() async {
@@ -206,7 +213,7 @@ class _EditHabitPageState extends State<EditHabitPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка: $e')),
+          const SnackBar(content: Text('Не удалось удалить привычку. Проверьте подключение к интернету.')),
         );
       }
     }

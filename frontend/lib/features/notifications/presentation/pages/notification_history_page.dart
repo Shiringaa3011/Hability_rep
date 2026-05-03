@@ -7,6 +7,7 @@ import '../../domain/entities/notification_history_item.dart';
 import '../bloc/notification_history_bloc.dart';
 import '../bloc/notification_history_event.dart';
 import '../bloc/notification_history_state.dart';
+import '../../../../core/error/error_screen.dart';
 
 class NotificationHistoryPage extends StatelessWidget {
   final String userId;
@@ -48,7 +49,13 @@ class _NotificationHistoryBody extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
         if (state.error != null && state.items.isEmpty) {
-          return Center(child: Text(state.error!));
+          return AppErrorWidget(
+            message: 'Не удалось загрузить историю уведомлений',
+            onRetry: () {
+              final bloc = context.read<NotificationHistoryBloc>();
+              bloc.add(NotificationHistoryLoad(bloc.userId));
+            },
+          );
         }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

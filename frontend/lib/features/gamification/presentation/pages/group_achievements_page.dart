@@ -5,6 +5,7 @@ import '../../domain/entities/group_achievement.dart';
 import '../bloc/group_achievements/group_achievements_bloc.dart';
 import '../bloc/group_achievements/group_achievements_event.dart';
 import '../bloc/group_achievements/group_achievements_state.dart';
+import '../../../../core/error/error_screen.dart';
 
 class GroupAchievementsPage extends StatefulWidget {
   const GroupAchievementsPage({
@@ -74,21 +75,9 @@ class _GroupAchievementsPageState extends State<GroupAchievementsPage>
           }
 
           if (state is GroupAchievementsError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline,
-                      size: 64, color: theme.colorScheme.error),
-                  const SizedBox(height: 16),
-                  Text(state.message,
-                      style: theme.textTheme.bodyLarge,
-                      textAlign: TextAlign.center),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                      onPressed: _load, child: const Text('Повторить')),
-                ],
-              ),
+            return AppErrorWidget(
+              message: 'Не удалось загрузить награды группы',
+              onRetry: _load,
             );
           }
 

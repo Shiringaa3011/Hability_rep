@@ -11,6 +11,7 @@ import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
 import '../../../../core/utils/date_helpers.dart';
+import '../../../../core/error/error_screen.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({required this.userId, super.key});
@@ -54,7 +55,10 @@ class _HabitsScaffold extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (state.error != null && state.habits.isEmpty) {
-            return Center(child: Text(state.error!));
+            return AppErrorWidget(
+              message: state.error,
+              onRetry: () => context.read<HomeBloc>().add(HomeLoadRequested(userId)),
+            );
           }
           return RefreshIndicator(
             onRefresh: () async {

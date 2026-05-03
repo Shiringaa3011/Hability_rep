@@ -4,6 +4,7 @@ import '../../../../injection_container.dart' as di;
 import '../../domain/usecases/create_group.dart';
 import '../../../../core/design_system/theme/app_colors.dart';
 import '../../../../core/design_system/theme/app_text_styles.dart';
+import 'package:dio/dio.dart';
 
 class CreateGroupPage extends StatefulWidget {
   final String userId;
@@ -28,13 +29,21 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
 
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    await di.sl<CreateGroup>()(
-      creatorUserId: widget.userId,
-      name: _name.text.trim(),
-      description: _description.text.trim().isEmpty ? null : _description.text.trim(),
-    );
-    if (!mounted) return;
-    Navigator.of(context).pop(true);
+    
+    try {
+      await di.sl<CreateGroup>()(
+        creatorUserId: widget.userId,
+        name: _name.text.trim(),
+        description: _description.text.trim().isEmpty ? null : _description.text.trim(),
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } on Exception catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Не удалось создать группу. Проверьте подключение к интернету.')),
+      );
+    }
   }
 
   @override
