@@ -14,10 +14,15 @@ import 'features/profile/presentation/pages/profile_page.dart';
 import 'injection_container.dart' as di;
 import 'core/services/auth_storage.dart';
 import 'features/auth/presentation/pages/login_page.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'features/gamification/presentation/bloc/stats/stats_bloc.dart';
+import 'features/gamification/presentation/bloc/stats/stats_event.dart';
+import 'features/gamification/domain/entities/user_stats.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  await initializeDateFormatting('ru');
   await Firebase.initializeApp();
 
   FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
@@ -180,7 +185,15 @@ class _MainShellState extends State<_MainShell> {
         index: _index,
         children: [
           HomePage(userId: widget.userId),
-          StatsPage(userId: widget.userId),
+          BlocProvider(
+            create: (_) => StatsBloc(
+              getUserStats: di.sl(),
+              getHabitsStats: di.sl(),
+              completeHabit: di.sl(),
+              getUserTimeline: di.sl(),
+            )..add(LoadStats(userId: widget.userId, period: StatsPeriod.week)),
+            child: StatsPage(userId: widget.userId),
+          ),
           AchievementsPage(userId: widget.userId),
           GroupsPage(userId: widget.userId),
           ProfilePage(userId: widget.userId),

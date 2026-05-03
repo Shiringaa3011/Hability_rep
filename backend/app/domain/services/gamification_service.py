@@ -64,7 +64,7 @@ class GamificationService:
             habit_id=habit_id,
             user_id=user_id,
             completed_at=datetime.combine(completion_date, datetime.now().time()),
-            completion_date=completion_date,
+            #completion_date=completion_date,
             points_earned=points_earned,
             current_streak=current_streak,
         )
@@ -78,8 +78,8 @@ class GamificationService:
 
         await self.update_user_level(user_id)
 
-        achievement_service = AchievementService(self.session)
-        await achievement_service.check_and_award_achievements(user_id)
+        #achievement_service = AchievementService(self.session)
+        #await achievement_service.check_and_award_achievements(user_id)
 
         return completion, True
 

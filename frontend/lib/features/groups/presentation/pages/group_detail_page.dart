@@ -35,6 +35,7 @@ class GroupDetailPage extends StatelessWidget {
         leaveGroup: di.sl<LeaveGroup>(),
         removeMember: di.sl<RemoveMember>(),
         sendReaction: di.sl<SendReaction>(),
+        repository: di.sl<GroupRepository>(),
       )..add(LoadGroupDetail(groupId: groupId, currentUserId: currentUserId)),
       child: const _GroupDetailView(),
     );
@@ -55,7 +56,8 @@ class _GroupDetailView extends StatelessWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.successMessage!)),
           );
-          if (state.successMessage!.contains('вышли')) {
+          if (state.successMessage!.contains('вышли') ||
+          state.successMessage!.contains('удалена')) {
             Navigator.of(context).pop();
           }
         } else if (state.error != null) {
@@ -159,7 +161,7 @@ class _GroupDetailView extends StatelessWidget {
                               icon: const Icon(Icons.delete_outline, color: Colors.red),
                               label: const Text('Удалить группу', style: TextStyle(color: Colors.red)),
                               style: ButtonStyle(
-                                backgroundColor: WidgetStatePropertyAll(colors.card),
+                                backgroundColor: WidgetStatePropertyAll(Colors.transparent),
                                 side: const WidgetStatePropertyAll(BorderSide(color: Colors.red)),
                               ),
                             ),

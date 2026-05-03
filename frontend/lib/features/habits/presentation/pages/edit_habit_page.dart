@@ -92,7 +92,12 @@ class _EditHabitPageState extends State<EditHabitPage> {
     final h = int.tryParse(p[0]);
     final m = int.tryParse(p[1]);
     if (h == null || m == null) return null;
-    return TimeOfDay(hour: h, minute: m);
+    
+    final now = DateTime.now();
+    final utc = DateTime(now.year, now.month, now.day, h, m);
+    final local = utc.toLocal();
+    
+    return TimeOfDay(hour: local.hour, minute: local.minute);
   }
 
   @override
@@ -118,6 +123,14 @@ class _EditHabitPageState extends State<EditHabitPage> {
     if (t != null) setState(() => _reminderTime = t);
   }
 
+  String? _fmtToUtc(TimeOfDay? t) {
+    if (t == null) return null;
+    final now = DateTime.now();
+    final local = DateTime(now.year, now.month, now.day, t.hour, t.minute);
+    final utc = local.toUtc();
+    return '${utc.hour.toString().padLeft(2, '0')}:${utc.minute.toString().padLeft(2, '0')}';
+  }
+
   String? _fmt(TimeOfDay? t) => t == null
       ? null
       : '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
@@ -137,12 +150,12 @@ class _EditHabitPageState extends State<EditHabitPage> {
       title: _title.text.trim(),
       description:
           _description.text.trim().isEmpty ? null : _description.text.trim(),
-      scheduledTimeLabel: _fmt(_time),
+      scheduledTimeLabel: _fmtToUtc(_time),
       frequencyLabel: _frequency == 'daily' ? 'Ежедневно' : 'Еженедельно',
       groupId: _groupId,
       groupName: _groupName,
       remindersEnabled: _reminders,
-      reminderTimeLabel: _reminders ? _fmt(_reminderTime) : null,
+      reminderTimeLabel: _reminders ? _fmtToUtc(_reminderTime) : null,
       dayOfWeek: _frequency == 'weekly' ? _selectedWeekday : null,
     );
     await di.sl<UpsertHabitDefinition>()(widget.userId, habit);

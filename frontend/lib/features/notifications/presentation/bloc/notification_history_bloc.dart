@@ -32,7 +32,7 @@ class NotificationHistoryBloc
   ) async {
     emit(state.copyWith(loading: true, clearError: true));
     try {
-      await _bootstrapPipeline(event.userId);
+      //await _bootstrapPipeline(event.userId);
       final list = await _getHistory(event.userId);
       emit(state.copyWith(loading: false, items: list, clearError: true));
     } catch (e) {

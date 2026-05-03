@@ -21,6 +21,7 @@ import 'features/gamification/presentation/bloc/group_achievements/group_achieve
 import 'features/gamification/presentation/bloc/group_stats/group_stats_bloc.dart';
 import 'features/gamification/presentation/bloc/level/level_bloc.dart';
 import 'features/gamification/presentation/bloc/stats/stats_bloc.dart';
+import 'features/gamification/domain/usecases/get_user_timeline.dart';
 
 import 'features/groups/data/datasources/group_local_datasource.dart';
 import 'features/groups/data/repositories/group_repository_impl.dart';
@@ -121,8 +122,9 @@ Future<void> _initGamification() async {
   sl.registerLazySingleton(() => CompleteHabit(sl()));
 
   sl.registerFactory(() => LevelBloc(getUserLevel: sl()));
-  sl.registerFactory(() => StatsBloc(getUserStats: sl(), getHabitsStats: sl(), completeHabit: sl()));
+  sl.registerFactory(() => StatsBloc(getUserStats: sl(), getHabitsStats: sl(), completeHabit: sl(), getUserTimeline: sl()));
   sl.registerFactory(() => AchievementsBloc(getAchievements: sl()));
   sl.registerFactory(() => GroupAchievementsBloc(getGroupAchievements: sl()));
   sl.registerFactory(() => GroupStatsBloc(getGroupStats: sl()));
+  sl.registerLazySingleton(() => GetUserTimeline(sl()));
 }

@@ -110,7 +110,7 @@ class _NotificationTile extends StatelessWidget {
             Text(item.body, maxLines: 4, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 6),
             Text(
-              fmt.format(item.receivedAt),
+              fmt.format(item.receivedAt.toLocal()),
               style: theme.textTheme.bodySmall,
             ),
           ],

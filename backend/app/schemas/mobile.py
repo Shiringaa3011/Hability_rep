@@ -148,3 +148,7 @@ class SendCodeRequest(BaseModel):
 class VerifyCodeRequest(BaseModel):
     email: str
     code: str = Field(min_length=6, max_length=6)
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str

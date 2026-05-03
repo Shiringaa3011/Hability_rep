@@ -9,6 +9,7 @@ from app.core.database import get_db
 from app.infrastructure.database.models import UserModel, VerificationCodeModel
 from app.infrastructure.services.email_service import send_verification_code
 from app.schemas.mobile import SendCodeRequest, VerifyCodeRequest
+from app.schemas.mobile import LoginRequest
 
 router = APIRouter()
 
@@ -54,6 +55,25 @@ async def verify_code(request: VerifyCodeRequest, db: AsyncSession = Depends(get
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     
     await db.flush()
+    
+    return {
+        "user_id": str(user.id),
+        "username": user.username,
+        "email": user.email,
+    }
+
+
+@router.post("/login")
+async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
+    """Вход в аккаунт"""
+    user_stmt = select(UserModel).where(UserModel.email == request.email.strip())
+    user = (await db.execute(user_stmt)).scalar_one_or_none()
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="Неверный email или пароль")
+    
+    if user.password_hash != request.password:
+        raise HTTPException(status_code=401, detail="Неверный email или пароль")
     
     return {
         "user_id": str(user.id),

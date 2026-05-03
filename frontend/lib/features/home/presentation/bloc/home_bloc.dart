@@ -41,14 +41,12 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         day: state.selectedDay,
         groupId: state.selectedGroupId,
       );
-      emit(
-        state.copyWith(
-          groupOptions: options,
-          habits: habits,
-          isLoading: false,
-          clearError: true,
-        ),
-      );
+      emit(state.copyWith(
+        groupOptions: options,
+        habits: habits,
+        isLoading: false,
+        clearError: true,
+      ));
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: e.toString()));
     }
@@ -72,13 +70,11 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     HomeGroupFilterSelected event,
     Emitter<HomeState> emit,
   ) async {
-    emit(
-      state.copyWith(
-        selectedGroupId: event.groupId,
-        isLoading: true,
-        clearError: true,
-      ),
-    );
+    emit(state.copyWith(
+      selectedGroupId: event.groupId,
+      isLoading: true,
+      clearError: true,
+    ));
     try {
       final habits = await _getToday(
         userId: userId,
@@ -94,47 +90,37 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   Future<void> _onToggle(HomeHabitToggled event, Emitter<HomeState> emit) async {
     final oldHabits = state.habits;
 
-    final updatedHabits = state.habits.map((h) {
-      if (h.id == event.habitId) {
-        return h.copyWith(completedToday: event.completed);
-      }
-      return h;
-    }).toList();
-    
-    emit(state.copyWith(habits: updatedHabits));
-    
-    try {
-      await _toggle(
-        habitId: event.habitId,
-        day: state.selectedDay,
-        completed: event.completed,
-      );
-      
-      if (event.completed) {
-        try {
-          final newAchievements = await _completeHabit(
-            CompleteHabitParams(
-              habitId: event.habitId,
-              userId: userId,
-            ),
-          );
+    emit(state.copyWith(
+      habits: state.habits.map((h) {
+        if (h.id == event.habitId) return h.copyWith(completedToday: event.completed);
+        return h;
+      }).toList(),
+    ));
 
-          newAchievements.fold(
-            (failure) => null,
-            (achievements) {
-              if (achievements.isNotEmpty) {
-              }
-            },
-          );
-        } catch (_) {
-        }
+    try {
+      if (event.completed) {
+        final result = await _completeHabit(
+          CompleteHabitParams(habitId: event.habitId, userId: userId),
+        );
+        result.fold(
+          (failure) => emit(state.copyWith(habits: oldHabits, error: failure.message)),
+          (_) => null,
+        );
+      } else {
+        await _toggle(
+          habitId: event.habitId,
+          userId: userId,
+          day: state.selectedDay,
+          completed: false,
+        );
       }
+
       final freshHabits = await _getToday(
         userId: userId,
         day: state.selectedDay,
         groupId: state.selectedGroupId,
       );
-      emit(state.copyWith(habits: freshHabits));
+      emit(state.copyWith(habits: freshHabits, clearError: true));
     } catch (e) {
       emit(state.copyWith(habits: oldHabits, error: e.toString()));
     }

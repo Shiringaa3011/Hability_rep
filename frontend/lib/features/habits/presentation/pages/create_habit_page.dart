@@ -91,6 +91,14 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
     if (t != null) setState(() => _reminderTime = t);
   }
 
+  String? _fmtToUtc(TimeOfDay? t) {
+    if (t == null) return null;
+    final now = DateTime.now();
+    final local = DateTime(now.year, now.month, now.day, t.hour, t.minute);
+    final utc = local.toUtc();
+    return '${utc.hour.toString().padLeft(2, '0')}:${utc.minute.toString().padLeft(2, '0')}';
+  }
+
   String? _fmt(TimeOfDay? t) => t == null
       ? null
       : '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
@@ -110,7 +118,7 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
       title: _title.text.trim(),
       description:
           _description.text.trim().isEmpty ? null : _description.text.trim(),
-      scheduledTimeLabel: _fmt(_time),
+      scheduledTimeLabel: _fmtToUtc(_time),
       frequencyLabel: _frequency == 'daily' ? 'Ежедневно' : 'Еженедельно',
       groupId: _selectedGroupId,
       groupName: _selectedGroupId != null
@@ -127,7 +135,7 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
               .name
           : null,
       remindersEnabled: _reminders,
-      reminderTimeLabel: _reminders ? _fmt(_reminderTime) : null,
+      reminderTimeLabel: _reminders ? _fmtToUtc(_reminderTime) : null,
       dayOfWeek: _frequency == 'weekly' ? _selectedWeekday : null,
     );
 

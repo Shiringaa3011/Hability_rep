@@ -3,7 +3,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import select
 
-from app.core.database import async_session_factory
+from app.core.database import AsyncSessionLocal
 from app.infrastructure.database.models import (
     HabitModel,
     UserModel,
@@ -22,7 +22,7 @@ async def check_habit_reminders():
     current_weekday = now.isoweekday()
     today_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
 
-    async with async_session_factory() as session:
+    async with AsyncSessionLocal() as session:
         stmt = select(HabitModel).where(
             HabitModel.is_active == True,
             HabitModel.reminder_enabled == True,
@@ -61,7 +61,7 @@ async def process_pending_notifications():
     """Обработать очередь отложенных уведомлений"""
     now = datetime.now(timezone.utc)
 
-    async with async_session_factory() as session:
+    async with AsyncSessionLocal() as session:
         expired_stmt = select(PendingNotificationModel).where(
             PendingNotificationModel.delivered == False,
             PendingNotificationModel.expires_at < now,

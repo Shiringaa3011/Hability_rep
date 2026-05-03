@@ -20,6 +20,7 @@ abstract class HomeRepository {
     required String habitId,
     required DateTime day,
     required bool completed,
+    String? userId
   });
 
   Future<TodayHabitEntity?> getHabitById(String habitId);

@@ -96,6 +96,7 @@ class HomeRepositoryImpl implements HomeRepository {
     required String habitId,
     required DateTime day,
     required bool completed,
+    String? userId,
   }) async {
     await dio.post(
       '${ApiConstants.habitsPath}/$habitId/completion',

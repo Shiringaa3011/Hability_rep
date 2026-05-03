@@ -10,6 +10,24 @@ from alembic import context
 from app.core.database import Base
 from app.core.config import settings
 
+from app.infrastructure.database.models import (
+    UserModel,
+    HabitModel,
+    HabitCompletionModel,
+    AchievementModel,
+    UserAchievementModel,
+    GroupModel,
+    GroupMemberModel,
+    GroupInviteModel,
+    GroupAchievementModel,
+    EarnedGroupAchievementModel,
+    NotificationModel,
+    UserNotificationSettingsModel,
+    UserStatsModel,
+    VerificationCodeModel,
+    PendingNotificationModel,
+)
+
 config = context.config
 
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)

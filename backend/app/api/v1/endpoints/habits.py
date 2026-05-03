@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from sqlalchemy import select, func, update
 from app.core.database import get_db
 from app.domain.models.habit import HabitFrequency
 from app.infrastructure.database.models import (
@@ -211,26 +212,23 @@ async def toggle_completion(
     existing = (await db.execute(exists_stmt)).scalar_one_or_none()
 
     if request.completed and existing is None:
-        completion = HabitCompletionModel(
-            habit_id=habit.id,
-            user_id=habit.user_id,
-            points_earned=10,
-            current_streak=1,
-            completed_at=datetime.combine(day, time.min, tzinfo=timezone.utc),
+        raise HTTPException(
+            status_code=400,
+            detail="Use /gamification/complete-habit to mark habit as completed",
         )
-        db.add(completion)
-        db.add(
-            NotificationModel(
-                user_id=habit.user_id,
-                title="Привычка выполнена",
-                body=f"Отмечено выполнение «{habit.name}».",
-                kind="habit_completed",
-                group_id=habit.group_id,
-            )
-        )
-        await db.flush()
+
     elif (not request.completed) and existing is not None:
+        points_to_deduct = existing.points_earned
         await db.delete(existing)
+        await db.flush()
+
+        await db.execute(
+            update(UserModel)
+            .where(UserModel.id == habit.user_id)
+            .values(total_points=func.greatest(
+                UserModel.total_points - points_to_deduct, 0
+            ))
+        )
 
 @router.delete("/{habit_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def deactivate_habit(

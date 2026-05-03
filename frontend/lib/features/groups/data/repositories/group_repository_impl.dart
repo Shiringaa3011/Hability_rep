@@ -201,4 +201,13 @@ class GroupRepositoryImpl implements GroupRepository {
         .map((e) => Map<String, dynamic>.from(e))
         .toList();
   }
+
+  @override
+  Future<void> deleteGroup(String groupId, String userId) async {
+    await dio.delete(
+      '${ApiConstants.groupsPath}/$groupId',
+      queryParameters: {'user_id': userId},
+    );
+    await localDataSource.invalidateGroups(userId);
+  }
 }

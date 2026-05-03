@@ -34,6 +34,7 @@ abstract class GroupRepository {
   });
 
   Future<List<Map<String, dynamic>>> searchUsers(String query);
+  Future<void> deleteGroup(String groupId, String userId);
 }
 
 class GroupDetail {

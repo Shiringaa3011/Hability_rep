@@ -135,25 +135,37 @@ class _VerificationPageState extends State<VerificationPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(6, (index) => Container(
-                        width: 48, height: 56, margin: const EdgeInsets.symmetric(horizontal: 4),
-                        child: TextFormField(
-                          controller: _controllers[index],
-                          focusNode: _focusNodes[index],
-                          keyboardType: TextInputType.number,
-                          textAlign: TextAlign.center,
-                          maxLength: 1,
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(color: colors.foreground),
-                          decoration: InputDecoration(
-                            counterText: '',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: colors.primary, width: 2)),
-                            filled: true, fillColor: colors.input,
-                          ),
-                          onChanged: (v) => _onChanged(v, index),
+                    width: 48,
+                    height: 56,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    child: TextFormField(
+                      controller: _controllers[index],
+                      focusNode: _focusNodes[index],
+                      keyboardType: TextInputType.number,
+                      textAlign: TextAlign.center,
+                      maxLength: 1,
+                      buildCounter: (context, {required int currentLength, required bool isFocused, required int? maxLength}) => null,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: colors.foreground,
+                        fontSize: 22,
+                      ),
+                      decoration: InputDecoration(
+                        counterText: '',
+                        contentPadding: EdgeInsets.zero,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: colors.border),
                         ),
-                      )),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: colors.primary, width: 2),
+                        ),
+                        filled: true,
+                        fillColor: colors.input,
+                      ),
+                      onChanged: (v) => _onChanged(v, index),
+                    ),
+                  )),
                 ),
                 const SizedBox(height: 24),
                 FilledButton(

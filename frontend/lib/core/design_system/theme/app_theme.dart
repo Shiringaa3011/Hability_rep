@@ -90,11 +90,14 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
+          backgroundColor: Colors.transparent,
           foregroundColor: c.primary,
           side: BorderSide(color: c.border),
           shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonRadius),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           textStyle: AppTextStyles.button,
+        ).copyWith(
+          backgroundColor: const WidgetStatePropertyAll(Colors.transparent),
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(

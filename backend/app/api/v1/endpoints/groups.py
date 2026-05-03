@@ -469,3 +469,28 @@ async def decide_invite(
                 group_id=invite.group_id,
             )
     await db.flush()
+
+
+@router.delete("/{group_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_group(
+    group_id: UUID,
+    user_id: UUID = Query(...),
+    db: AsyncSession = Depends(get_db),
+):
+    group = await db.get(GroupModel, group_id)
+    if not group:
+        raise HTTPException(status_code=404, detail="Group not found")
+    if group.created_by != user_id:
+        raise HTTPException(status_code=403, detail="Only creator can delete group")
+    
+    group.is_active = False
+    
+    habits_stmt = select(HabitModel).where(
+        HabitModel.group_id == group_id,
+        HabitModel.is_active == True,
+    )
+    habits = (await db.execute(habits_stmt)).scalars().all()
+    for habit in habits:
+        habit.is_active = False
+    
+    await db.flush()

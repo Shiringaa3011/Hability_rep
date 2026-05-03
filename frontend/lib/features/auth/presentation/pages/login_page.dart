@@ -34,7 +34,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final dio = di.sl<Dio>();
       final response = await dio.post(
-        '/users/login',
+        '/auth/login',
         data: {
           'email': _email.text.trim(),
           'password': _password.text,

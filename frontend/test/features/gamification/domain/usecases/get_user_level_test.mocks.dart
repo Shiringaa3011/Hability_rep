@@ -15,11 +15,8 @@ import 'package:habitly/features/gamification/domain/entities/group_stats.dart'
     as _i11;
 import 'package:habitly/features/gamification/domain/entities/habit_stats.dart'
     as _i8;
-<<<<<<< HEAD
-=======
 import 'package:habitly/features/gamification/domain/entities/timeline_point.dart'
     as _i12;
->>>>>>> main
 import 'package:habitly/features/gamification/domain/entities/user_level.dart'
     as _i6;
 import 'package:habitly/features/gamification/domain/entities/user_stats.dart'
@@ -226,8 +223,6 @@ class MockGamificationRepository extends _i1.Mock
       ) as _i4.Future<_i2.Either<_i5.Failure, _i11.GroupStats>>);
 
   @override
-<<<<<<< HEAD
-=======
   _i4.Future<_i2.Either<_i5.Failure, List<_i12.TimelinePoint>>> getUserTimeline(
     String? userId,
     _i7.StatsPeriod? period,
@@ -255,7 +250,6 @@ class MockGamificationRepository extends _i1.Mock
       ) as _i4.Future<_i2.Either<_i5.Failure, List<_i12.TimelinePoint>>>);
 
   @override
->>>>>>> main
   _i4.Future<_i2.Either<_i5.Failure, void>> refreshData(String? userId) =>
       (super.noSuchMethod(
         Invocation.method(

@@ -303,7 +303,7 @@ Future<void> _showLogoutDialog(BuildContext context) async {
   if (confirmed == true && context.mounted) {
     await di.sl<AuthStorage>().clear();
     if (context.mounted) {
-      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
     }
   }
 }
