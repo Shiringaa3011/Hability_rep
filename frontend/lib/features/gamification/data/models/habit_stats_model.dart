@@ -6,7 +6,7 @@ part 'habit_stats_model.freezed.dart';
 part 'habit_stats_model.g.dart';
 
 @freezed
-class HabitStatsModel with _$HabitStatsModel {
+abstract class HabitStatsModel with _$HabitStatsModel {
   const factory HabitStatsModel({
     @JsonKey(name: 'habit_id') required String habitId,
     @JsonKey(name: 'habit_name') required String habitName,

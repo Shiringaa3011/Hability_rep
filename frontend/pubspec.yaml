@@ -31,6 +31,8 @@ dependencies:
 
   cupertino_icons: ^1.0.6
 
+  google_fonts: ^6.2.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -38,7 +40,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
   build_runner: ^2.4.7
-  freezed: ^3.2.5
+  freezed: ^3.2.3
   json_serializable: ^6.7.1
 
   mockito: ^5.4.4
