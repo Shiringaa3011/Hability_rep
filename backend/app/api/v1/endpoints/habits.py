@@ -4,6 +4,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import or_
+from typing import Optional
 
 from sqlalchemy import select, func, update
 from app.core.database import get_db
@@ -14,7 +16,10 @@ from app.infrastructure.database.models import (
     HabitModel,
     NotificationModel,
     UserModel,
+    GroupMemberModel
 )
+from app.infrastructure.database.models import HabitReminderSettingsModel
+
 from app.schemas.mobile import (
     DayHabitsResponse,
     HabitCompletionToggleRequest,
@@ -41,17 +46,27 @@ async def get_day_habits(
         raise HTTPException(status_code=404, detail="User not found")
 
     weekday = day.isoweekday()
-    
+
+    user_groups_stmt = select(GroupMemberModel.group_id).where(
+        GroupMemberModel.user_id == user_id
+    )
+    user_group_ids = (await db.execute(user_groups_stmt)).scalars().all()
+
     stmt = select(HabitModel).where(
-        HabitModel.user_id == user_id,
         HabitModel.is_active == True,
         func.date(HabitModel.created_at) <= day,
-        (HabitModel.frequency == 'daily') | 
-        (HabitModel.frequency == 'weekly') & (HabitModel.day_of_week == weekday)
+        (HabitModel.frequency == 'daily')
+        | ((HabitModel.frequency == 'weekly') & (HabitModel.day_of_week == weekday)),
+        or_(
+            HabitModel.user_id == user_id,
+            HabitModel.group_id.in_(user_group_ids) if user_group_ids else False,
+        ),
     )
     if group_id:
         stmt = stmt.where(HabitModel.group_id == group_id)
-    habits = list((await db.execute(stmt.order_by(HabitModel.created_at.desc()))).scalars().all())
+    habits = list(
+        (await db.execute(stmt.order_by(HabitModel.created_at.desc()))).scalars().all()
+    )
 
     result: list[HabitResponse] = []
     for habit in habits:
@@ -86,14 +101,27 @@ async def get_day_habits(
 
 
 @router.get("/{habit_id}", response_model=HabitResponse)
-async def get_habit(habit_id: UUID, db: AsyncSession = Depends(get_db)):
+async def get_habit(
+    habit_id: UUID,
+    user_id: UUID = Query(...),
+    db: AsyncSession = Depends(get_db),
+):
     habit = await db.get(HabitModel, habit_id)
     if not habit:
         raise HTTPException(status_code=404, detail="Habit not found")
+
     group_name = None
     if habit.group_id:
         group = await db.get(GroupModel, habit.group_id)
         group_name = group.name if group else None
+
+    # читаем индивидуальные настройки напоминания
+    reminder_stmt = select(HabitReminderSettingsModel).where(
+        HabitReminderSettingsModel.habit_id == habit_id,
+        HabitReminderSettingsModel.user_id == user_id,
+    )
+    reminder = (await db.execute(reminder_stmt)).scalar_one_or_none()
+
     return HabitResponse(
         id=habit.id,
         user_id=habit.user_id,
@@ -104,8 +132,8 @@ async def get_habit(habit_id: UUID, db: AsyncSession = Depends(get_db)):
         frequency=habit.frequency.value,
         scheduled_time=_time_to_label(habit.scheduled_time),
         completed_today=False,
-        reminders_enabled=bool(habit.reminder_enabled),
-        reminder_time=_time_to_label(habit.reminder_time),
+        reminders_enabled=reminder.reminder_enabled if reminder else False,
+        reminder_time=_time_to_label(reminder.reminder_time) if reminder else None,
         day_of_week=habit.day_of_week,
     )
 
@@ -118,7 +146,7 @@ async def create_habit(request: HabitCreateUpdateRequest, db: AsyncSession = Dep
 
     if request.frequency == "weekly" and request.day_of_week is None:
         raise HTTPException(status_code=400, detail="day_of_week is required for weekly habits")
-    
+
     habit = HabitModel(
         user_id=request.user_id,
         name=request.title.strip(),
@@ -128,14 +156,21 @@ async def create_habit(request: HabitCreateUpdateRequest, db: AsyncSession = Dep
         difficulty=2,
         target_days=30 if request.frequency == "daily" else 12,
         scheduled_time=request.scheduled_time,
-        reminder_enabled=request.reminders_enabled,
-        reminder_time=request.reminder_time,
         day_of_week=request.day_of_week if request.frequency == "weekly" else None,
         is_active=True,
     )
     db.add(habit)
     await db.flush()
+
+    db.add(HabitReminderSettingsModel(
+        habit_id=habit.id,
+        user_id=request.user_id,
+        reminder_enabled=request.reminders_enabled,
+        reminder_time=request.reminder_time,
+    ))
+    await db.flush()
     await db.refresh(habit)
+
     return HabitResponse(
         id=habit.id,
         user_id=habit.user_id,
@@ -146,8 +181,8 @@ async def create_habit(request: HabitCreateUpdateRequest, db: AsyncSession = Dep
         frequency=habit.frequency.value,
         scheduled_time=_time_to_label(habit.scheduled_time),
         completed_today=False,
-        reminders_enabled=bool(habit.reminder_enabled),
-        reminder_time=_time_to_label(habit.reminder_time),
+        reminders_enabled=bool(request.reminders_enabled),
+        reminder_time=_time_to_label(request.reminder_time),
         day_of_week=habit.day_of_week,
     )
 
@@ -159,22 +194,45 @@ async def update_habit(
     habit = await db.get(HabitModel, habit_id)
     if not habit:
         raise HTTPException(status_code=404, detail="Habit not found")
+
     if habit.user_id != request.user_id:
-        raise HTTPException(status_code=403, detail="Access denied")
+        if habit.group_id:
+            member_stmt = select(GroupMemberModel).where(
+                GroupMemberModel.group_id == habit.group_id,
+                GroupMemberModel.user_id == request.user_id,
+            )
+            is_member = (await db.execute(member_stmt)).scalar_one_or_none()
+            if not is_member:
+                raise HTTPException(status_code=403, detail="Access denied")
+        else:
+            raise HTTPException(status_code=403, detail="Access denied")
 
     if request.frequency == "weekly" and request.day_of_week is None:
         raise HTTPException(status_code=400, detail="day_of_week is required for weekly habits")
 
     habit.name = request.title.strip()
     habit.description = request.description.strip() if request.description else None
-    habit.group_id = request.group_id
     habit.frequency = HabitFrequency(request.frequency)
     habit.target_days = 30 if request.frequency == "daily" else 12
     habit.scheduled_time = request.scheduled_time
-    habit.reminder_enabled = request.reminders_enabled
-    habit.reminder_time = request.reminder_time
     habit.day_of_week = request.day_of_week if request.frequency == "weekly" else None
-    
+
+    reminder_stmt = select(HabitReminderSettingsModel).where(
+        HabitReminderSettingsModel.habit_id == habit_id,
+        HabitReminderSettingsModel.user_id == request.user_id,
+    )
+    reminder_settings = (await db.execute(reminder_stmt)).scalar_one_or_none()
+    if reminder_settings:
+        reminder_settings.reminder_enabled = request.reminders_enabled
+        reminder_settings.reminder_time = request.reminder_time
+    else:
+        db.add(HabitReminderSettingsModel(
+            habit_id=habit_id,
+            user_id=request.user_id,
+            reminder_enabled=request.reminders_enabled,
+            reminder_time=request.reminder_time,
+        ))
+
     await db.flush()
     await db.refresh(habit)
     return HabitResponse(
@@ -187,8 +245,8 @@ async def update_habit(
         frequency=habit.frequency.value,
         scheduled_time=_time_to_label(habit.scheduled_time),
         completed_today=False,
-        reminders_enabled=bool(habit.reminder_enabled),
-        reminder_time=_time_to_label(habit.reminder_time),
+        reminders_enabled=bool(request.reminders_enabled),
+        reminder_time=_time_to_label(request.reminder_time),
         day_of_week=habit.day_of_week,
     )
 
@@ -203,19 +261,40 @@ async def toggle_completion(
     if not habit:
         raise HTTPException(status_code=404, detail="Habit not found")
 
+    user_id = request.user_id if request.user_id else habit.user_id
+
     day = request.day
     exists_stmt = select(HabitCompletionModel).where(
         HabitCompletionModel.habit_id == habit_id,
-        HabitCompletionModel.user_id == habit.user_id,
+        HabitCompletionModel.user_id == user_id,
         func.date(HabitCompletionModel.completed_at) == day,
     )
     existing = (await db.execute(exists_stmt)).scalar_one_or_none()
 
     if request.completed and existing is None:
-        raise HTTPException(
-            status_code=400,
-            detail="Use /gamification/complete-habit to mark habit as completed",
+        completion = HabitCompletionModel(
+            habit_id=habit.id,
+            user_id=user_id,
+            points_earned=10,
+            current_streak=1,
+            completed_at=datetime.combine(day, time.min, tzinfo=timezone.utc),
         )
+        db.add(completion)
+
+        user = await db.get(UserModel, user_id)
+        if user:
+            user.total_points += 10
+
+        db.add(
+            NotificationModel(
+                user_id=user_id,
+                title="Привычка выполнена",
+                body=f"Отмечено выполнение «{habit.name}».",
+                kind="habit_completed",
+                group_id=habit.group_id,
+            )
+        )
+        await db.flush()
 
     elif (not request.completed) and existing is not None:
         points_to_deduct = existing.points_earned
@@ -224,11 +303,12 @@ async def toggle_completion(
 
         await db.execute(
             update(UserModel)
-            .where(UserModel.id == habit.user_id)
+            .where(UserModel.id == user_id)
             .values(total_points=func.greatest(
                 UserModel.total_points - points_to_deduct, 0
             ))
         )
+
 
 @router.delete("/{habit_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def deactivate_habit(
@@ -243,4 +323,31 @@ async def deactivate_habit(
         raise HTTPException(status_code=403, detail="Access denied")
     
     habit.is_active = False
+    await db.flush()
+
+
+@router.post("/{habit_id}/reminder-settings", status_code=status.HTTP_204_NO_CONTENT)
+async def save_reminder_settings(
+    habit_id: UUID,
+    user_id: UUID = Query(...),
+    reminder_enabled: bool = Query(...),
+    reminder_time: Optional[time] = Query(None),
+    db: AsyncSession = Depends(get_db),
+):
+    stmt = select(HabitReminderSettingsModel).where(
+        HabitReminderSettingsModel.habit_id == habit_id,
+        HabitReminderSettingsModel.user_id == user_id,
+    )
+    settings = (await db.execute(stmt)).scalar_one_or_none()
+
+    if settings:
+        settings.reminder_enabled = reminder_enabled
+        settings.reminder_time = reminder_time
+    else:
+        db.add(HabitReminderSettingsModel(
+            habit_id=habit_id,
+            user_id=user_id,
+            reminder_enabled=reminder_enabled,
+            reminder_time=reminder_time,
+        ))
     await db.flush()

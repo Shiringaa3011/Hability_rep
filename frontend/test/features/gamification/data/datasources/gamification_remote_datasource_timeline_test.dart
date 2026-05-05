@@ -111,8 +111,8 @@ void main() {
             requestOptions: RequestOptions(path: ''),
           ));
 
-      expect(
-        () => dataSource.getUserTimeline(tUserId, StatsPeriod.day),
+      await expectLater(
+        dataSource.getUserTimeline(tUserId, StatsPeriod.day),
         throwsA(isA<ServerException>()),
       );
     });
@@ -126,8 +126,8 @@ void main() {
         requestOptions: RequestOptions(path: ''),
       ));
 
-      expect(
-        () => dataSource.getUserTimeline(tUserId, StatsPeriod.week),
+      await expectLater(
+        dataSource.getUserTimeline(tUserId, StatsPeriod.week),
         throwsA(isA<NetworkException>()),
       );
     });
@@ -141,13 +141,13 @@ void main() {
         requestOptions: RequestOptions(path: ''),
       ));
 
-      expect(
-        () => dataSource.getUserTimeline(tUserId, StatsPeriod.week),
+      await expectLater(
+        dataSource.getUserTimeline(tUserId, StatsPeriod.week),
         throwsA(isA<NetworkException>()),
       );
     });
 
-    test('should throw ServerException on generic DioException', () async {
+    test('should throw NetworkException on generic DioException', () async {
       when(mockDio.get(
         any,
         queryParameters: anyNamed('queryParameters'),
@@ -157,9 +157,9 @@ void main() {
         message: 'Unknown network error',
       ));
 
-      expect(
-        () => dataSource.getUserTimeline(tUserId, StatsPeriod.week),
-        throwsA(isA<ServerException>()),
+      await expectLater(
+        dataSource.getUserTimeline(tUserId, StatsPeriod.week),
+        throwsA(isA<NetworkException>()),
       );
     });
   });

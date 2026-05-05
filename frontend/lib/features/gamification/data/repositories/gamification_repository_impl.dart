@@ -131,10 +131,14 @@ class GamificationRepositoryImpl implements GamificationRepository {
   Future<Either<Failure, List<NewAchievementInfo>>> completeHabit(
     String habitId,
     String userId,
+    DateTime completionDate,
   ) async {
     try {
-      final newAchievements =
-          await remoteDataSource.completeHabit(habitId, userId);
+      final newAchievements = await remoteDataSource.completeHabit(
+        habitId,
+        userId,
+        completionDate,
+      );
       return Right(newAchievements);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

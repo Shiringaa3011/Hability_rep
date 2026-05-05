@@ -6,7 +6,6 @@ import '../../domain/usecases/get_home_group_filter_options.dart';
 import '../../domain/usecases/get_today_habits_for_day.dart';
 import '../../domain/usecases/toggle_habit_completion.dart';
 import '../../../gamification/domain/usecases/complete_habit.dart';
-import '../../../gamification/domain/entities/achievement.dart';
 import 'home_event.dart';
 import 'home_state.dart';
 
@@ -35,7 +34,10 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   }
 
   Future<void> _onLoad(HomeLoadRequested event, Emitter<HomeState> emit) async {
-    emit(state.copyWith(isLoading: true, clearError: true));
+    if (state.habits.isEmpty) {
+      emit(state.copyWith(isLoading: true, clearError: true));
+    }
+
     try {
       final options = await _getGroupOptions(userId);
       final habits = await _getToday(
@@ -47,17 +49,34 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         groupOptions: options,
         habits: habits,
         isLoading: false,
+        isOffline: false,
         clearError: true,
       ));
     } on DioException catch (e) {
-      emit(state.copyWith(isLoading: false, error: fromDioException(e).message));
+      final isOffline = e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout;
+      emit(state.copyWith(
+        isLoading: false,
+        isOffline: isOffline,
+        error: state.habits.isEmpty ? fromDioException(e).message : null,
+      ));
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: 'Что-то пошло не так'));
+      emit(state.copyWith(
+        isLoading: false,
+        error: state.habits.isEmpty ? 'Что-то пошло не так' : null,
+      ));
     }
   }
 
   Future<void> _onDate(HomeDateSelected event, Emitter<HomeState> emit) async {
-    emit(state.copyWith(selectedDay: event.day, isLoading: true, clearError: true));
+    emit(state.copyWith(
+      selectedDay: event.day,
+      habits: const [],
+      isLoading: true,
+      clearError: true,
+    ));
+
     try {
       final habits = await _getToday(
         userId: userId,
@@ -66,7 +85,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       );
       emit(state.copyWith(habits: habits, isLoading: false, clearError: true));
     } on DioException catch (e) {
-      emit(state.copyWith(isLoading: false, error: fromDioException(e).message));
+      final isOffline = e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout;
+      emit(state.copyWith(
+        isLoading: false,
+        isOffline: isOffline,
+        error: fromDioException(e).message,
+      ));
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: 'Что-то пошло не так'));
     }
@@ -86,7 +112,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       );
       emit(state.copyWith(habits: habits, isLoading: false, clearError: true));
     } on DioException catch (e) {
-      emit(state.copyWith(isLoading: false, error: fromDioException(e).message));
+      final isOffline = e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout;
+      emit(state.copyWith(
+        isLoading: false,
+        isOffline: isOffline,
+        error: fromDioException(e).message,
+      ));
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: 'Что-то пошло не так'));
     }
@@ -105,7 +138,11 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     try {
       if (event.completed) {
         final result = await _completeHabit(
-          CompleteHabitParams(habitId: event.habitId, userId: userId),
+          CompleteHabitParams(
+            habitId: event.habitId,
+            userId: userId,
+            completionDate: state.selectedDay,
+          ),
         );
         result.fold(
           (failure) => emit(state.copyWith(habits: oldHabits, error: failure.message)),
@@ -124,10 +161,18 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         userId: userId,
         day: state.selectedDay,
         groupId: state.selectedGroupId,
+        forceRefresh: true,
       );
       emit(state.copyWith(habits: freshHabits, clearError: true));
     } on DioException catch (e) {
-      emit(state.copyWith(habits: oldHabits, error: fromDioException(e).message));
+      final isOffline = e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout;
+      emit(state.copyWith(
+        habits: oldHabits,
+        isOffline: isOffline,
+        error: isOffline ? 'Нет подключения к интернету' : fromDioException(e).message,
+      ));
     } catch (e) {
       emit(state.copyWith(habits: oldHabits, error: 'Что-то пошло не так'));
     }

@@ -154,6 +154,7 @@ class MockGamificationRepository extends _i1.Mock
       _i2.Either<_i5.Failure, List<_i9.NewAchievementInfo>>> completeHabit(
     String? habitId,
     String? userId,
+    DateTime? completionDate,
   ) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -161,6 +162,7 @@ class MockGamificationRepository extends _i1.Mock
           [
             habitId,
             userId,
+            completionDate,
           ],
         ),
         returnValue: _i4.Future<
@@ -172,6 +174,7 @@ class MockGamificationRepository extends _i1.Mock
             [
               habitId,
               userId,
+              completionDate,
             ],
           ),
         )),

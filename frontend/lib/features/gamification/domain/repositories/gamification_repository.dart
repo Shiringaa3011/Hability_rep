@@ -25,6 +25,7 @@ abstract class GamificationRepository {
   Future<Either<Failure, List<NewAchievementInfo>>> completeHabit(
     String habitId,
     String userId,
+    DateTime completionDate,
   );
 
   Future<Either<Failure, List<GroupAchievement>>> getGroupAchievements(

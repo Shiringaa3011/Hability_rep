@@ -67,11 +67,23 @@ class _NotificationSettingsView extends StatelessWidget {
 
 class NotificationSettingsPage extends StatelessWidget {
   final String userId;
+  final NotificationSettingsCubit? settingsCubit;
 
-  const NotificationSettingsPage({required this.userId, super.key});
+  const NotificationSettingsPage({
+    required this.userId,
+    this.settingsCubit,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (settingsCubit != null) {
+      return BlocProvider<NotificationSettingsCubit>.value(
+        value: settingsCubit!,
+        child: const _NotificationSettingsView(),
+      );
+    }
+
     return BlocProvider(
       create: (_) => NotificationSettingsCubit(
         userId: userId,

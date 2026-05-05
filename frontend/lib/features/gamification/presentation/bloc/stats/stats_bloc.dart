@@ -54,7 +54,7 @@ class StatsBloc extends Bloc<StatsEvent, StatsState> {
     Emitter<StatsState> emit,
   ) async {
     final result = await completeHabit(
-      CompleteHabitParams(habitId: event.habitId, userId: event.userId),
+      CompleteHabitParams(habitId: event.habitId, userId: event.userId,  completionDate: DateTime.now(), ),
     );
 
     result.fold(

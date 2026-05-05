@@ -8,10 +8,12 @@ class CompleteHabitParams {
   const CompleteHabitParams({
     required this.habitId,
     required this.userId,
+    required this.completionDate,
   });
 
   final String habitId;
   final String userId;
+  final DateTime completionDate;
 }
 
 class CompleteHabit {
@@ -22,6 +24,10 @@ class CompleteHabit {
   Future<Either<Failure, List<NewAchievementInfo>>> call(
     CompleteHabitParams params,
   ) async {
-    return await repository.completeHabit(params.habitId, params.userId);
+    return repository.completeHabit(
+      params.habitId,
+      params.userId,
+      params.completionDate,
+    );
   }
 }

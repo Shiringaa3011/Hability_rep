@@ -14,10 +14,18 @@ import '../../../../core/services/logger_service.dart';
 class EditHabitPage extends StatefulWidget {
   final String userId;
   final String habitId;
+  final GetHabitById? getHabitById;
+  final GetHomeGroupFilterOptions? getHomeGroupFilterOptions;
+  final UpsertHabitDefinition? upsertHabitDefinition;
+  final DeleteHabitUseCase? deleteHabitUseCase;
 
   const EditHabitPage({
     required this.userId,
     required this.habitId,
+    this.getHabitById,
+    this.getHomeGroupFilterOptions,
+    this.upsertHabitDefinition,
+    this.deleteHabitUseCase,
     super.key,
   });
 
@@ -50,8 +58,13 @@ class _EditHabitPageState extends State<EditHabitPage> {
 
   Future<void> _bootstrap() async {
     try {
-      final habit = await di.sl<GetHabitById>()(widget.habitId);
-      final groups = await di.sl<GetHomeGroupFilterOptions>()(widget.userId);
+      final habit = await (widget.getHabitById ?? di.sl<GetHabitById>())(
+        widget.habitId,
+        widget.userId,
+      );
+      final groups =
+          await (widget.getHomeGroupFilterOptions ??
+              di.sl<GetHomeGroupFilterOptions>())(widget.userId);
       if (!mounted) return;
 
       if (habit == null) {
@@ -94,7 +107,7 @@ class _EditHabitPageState extends State<EditHabitPage> {
     if (h == null || m == null) return null;
     
     final now = DateTime.now();
-    final utc = DateTime(now.year, now.month, now.day, h, m);
+    final utc = DateTime.utc(now.year, now.month, now.day, h, m);
     final local = utc.toLocal();
     
     return TimeOfDay(hour: local.hour, minute: local.minute);
@@ -159,7 +172,10 @@ class _EditHabitPageState extends State<EditHabitPage> {
       dayOfWeek: _frequency == 'weekly' ? _selectedWeekday : null,
     );
     try {
-      await di.sl<UpsertHabitDefinition>()(widget.userId, habit);
+      await (widget.upsertHabitDefinition ?? di.sl<UpsertHabitDefinition>())(
+        widget.userId,
+        habit,
+      );
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } catch (_) {
@@ -203,7 +219,10 @@ class _EditHabitPageState extends State<EditHabitPage> {
     if (confirmed != true) return;
 
     try {
-      await di.sl<DeleteHabitUseCase>()(widget.habitId, widget.userId);
+      await (widget.deleteHabitUseCase ?? di.sl<DeleteHabitUseCase>())(
+        widget.habitId,
+        widget.userId,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Привычка удалена')),
@@ -424,11 +443,13 @@ class _EditHabitPageState extends State<EditHabitPage> {
               ),
             const SizedBox(height: 24),
             FilledButton(
+              key: const Key('habit_save_button'),
               onPressed: canSave ? _save : null,
               child: const Text('Сохранить'),
             ),
             const SizedBox(height: 12),
             OutlinedButton(
+              key: const Key('habit_delete_button'),
               onPressed: _deleteHabit,
               style: OutlinedButton.styleFrom(
                 foregroundColor: colors.destructive,

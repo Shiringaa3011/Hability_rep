@@ -12,12 +12,20 @@ import 'group_detail_page.dart';
 import '../../../../core/error/error_screen.dart';
 
 class GroupsPage extends StatelessWidget {
-  const GroupsPage({required this.userId, super.key});
+  const GroupsPage({required this.userId, this.groupsBloc, super.key});
 
   final String userId;
+  final GroupsBloc? groupsBloc;
 
   @override
   Widget build(BuildContext context) {
+    if (groupsBloc != null) {
+      return BlocProvider<GroupsBloc>.value(
+        value: groupsBloc!,
+        child: _GroupsScaffold(userId: userId),
+      );
+    }
+
     return BlocProvider(
       create: (_) => GroupsBloc(
         getUserGroups: di.sl(),

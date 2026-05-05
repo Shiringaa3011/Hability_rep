@@ -20,9 +20,7 @@ class HomeRepositoryImpl implements HomeRepository {
   List<TodayHabitEntity> _sortedForUi(List<TodayHabitEntity> list) {
     final copy = [...list];
     copy.sort((a, b) {
-      if (a.completedToday == b.completedToday) {
-        return a.id.compareTo(b.id);
-      }
+      if (a.completedToday == b.completedToday) return a.id.compareTo(b.id);
       return a.completedToday ? 1 : -1;
     });
     return copy;
@@ -33,52 +31,65 @@ class HomeRepositoryImpl implements HomeRepository {
     return habits.where((h) => h.groupId == groupId).toList();
   }
 
+  List<TodayHabitEntity> _mapResponse(Map<String, dynamic> data) {
+    final rows = data['habits'] as List<dynamic>;
+    return rows.map((raw) {
+      final m = raw as Map<String, dynamic>;
+      return TodayHabitEntity(
+        id: m['id'] as String,
+        title: m['title'] as String,
+        description: m['description'] as String?,
+        scheduledTimeLabel: m['scheduled_time'] as String?,
+        frequencyLabel: (m['frequency'] as String?) == 'weekly' ? 'Еженедельно' : 'Ежедневно',
+        completedToday: m['completed_today'] as bool? ?? false,
+        groupId: m['group_id'] as String?,
+        groupName: m['group_name'] as String?,
+        remindersEnabled: m['reminders_enabled'] as bool? ?? false,
+        reminderTimeLabel: m['reminder_time'] as String?,
+      );
+    }).toList();
+  }
+
   @override
   Future<List<TodayHabitEntity>> getHabitsForDay({
     required String userId,
     required DateTime day,
     String? groupId,
+    bool forceRefresh = false,
   }) async {
-    final cached = localDataSource.getCachedHabits(userId, day);
+    final cached = forceRefresh ? null : localDataSource.getCachedHabits(userId, day);
+
+    if (cached != null) {
+      _refreshCache(userId, day).ignore();
+      return _filterByGroup(cached, groupId);
+    }
 
     try {
       final response = await dio.get(
         '${ApiConstants.habitsPath}/user/$userId/day',
         queryParameters: {
           'day': day.toIso8601String().split('T').first,
-          if (groupId != null) 'group_id': groupId,
         },
       );
-      final data = response.data as Map<String, dynamic>;
-      final rows = data['habits'] as List<dynamic>;
-      final mapped = rows.map((raw) {
-        final m = raw as Map<String, dynamic>;
-        final frequency = (m['frequency'] as String?) == 'weekly'
-            ? 'Еженедельно'
-            : 'Ежедневно';
-        return TodayHabitEntity(
-          id: m['id'] as String,
-          title: m['title'] as String,
-          description: m['description'] as String?,
-          scheduledTimeLabel: m['scheduled_time'] as String?,
-          frequencyLabel: frequency,
-          completedToday: m['completed_today'] as bool? ?? false,
-          groupId: m['group_id'] as String?,
-          groupName: m['group_name'] as String?,
-          remindersEnabled: m['reminders_enabled'] as bool? ?? false,
-          reminderTimeLabel: m['reminder_time'] as String?,
-        );
-      }).toList();
-      final sorted = _sortedForUi(mapped);
-
+      final sorted = _sortedForUi(_mapResponse(response.data as Map<String, dynamic>));
       await localDataSource.cacheHabits(userId, day, sorted);
-
       return _filterByGroup(sorted, groupId);
     } catch (e) {
-      if (cached != null) {
-        return _filterByGroup(cached, groupId);
-      }
       rethrow;
+    }
+  }
+
+  Future<void> _refreshCache(String userId, DateTime day) async {
+    try {
+      final response = await dio.get(
+        '${ApiConstants.habitsPath}/user/$userId/day',
+        queryParameters: {
+          'day': day.toIso8601String().split('T').first,
+        },
+      );
+      final sorted = _sortedForUi(_mapResponse(response.data as Map<String, dynamic>));
+      await localDataSource.cacheHabits(userId, day, sorted);
+    } catch (_) {
     }
   }
 
@@ -103,23 +114,28 @@ class HomeRepositoryImpl implements HomeRepository {
       data: {
         'day': day.toIso8601String().split('T').first,
         'completed': completed,
+        'user_id': userId,
       },
     );
+    if (userId != null) {
+      await localDataSource.invalidateDay(userId, day);
+    }
   }
 
   @override
-  Future<TodayHabitEntity?> getHabitById(String habitId) async {
+  Future<TodayHabitEntity?> getHabitById(String habitId, String userId) async {
     try {
-      final response = await dio.get('${ApiConstants.habitsPath}/$habitId');
+      final response = await dio.get(
+        '${ApiConstants.habitsPath}/$habitId',
+        queryParameters: {'user_id': userId},
+      );
       final m = response.data as Map<String, dynamic>;
       return TodayHabitEntity(
         id: m['id'] as String,
         title: m['title'] as String,
         description: m['description'] as String?,
         scheduledTimeLabel: m['scheduled_time'] as String?,
-        frequencyLabel: (m['frequency'] as String?) == 'weekly'
-            ? 'Еженедельно'
-            : 'Ежедневно',
+        frequencyLabel: (m['frequency'] as String?) == 'weekly' ? 'Еженедельно' : 'Ежедневно',
         completedToday: m['completed_today'] as bool? ?? false,
         groupId: m['group_id'] as String?,
         groupName: m['group_name'] as String?,

@@ -526,3 +526,30 @@ class PendingNotificationModel(Base):
     expires_at = Column(DateTime(timezone=True), nullable=False)
     delivered = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class LeaderReactionModel(Base):
+    __tablename__ = "leader_reactions"
+
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    group_id = Column(GUID, ForeignKey("groups.id", ondelete="CASCADE"), nullable=False, index=True)
+    from_user_id = Column(GUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    to_user_id = Column(GUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("group_id", "from_user_id", "to_user_id", name="uq_leader_reaction"),
+    )
+
+class HabitReminderSettingsModel(Base):
+    __tablename__ = "habit_reminder_settings"
+
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    habit_id = Column(GUID, ForeignKey("habits.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(GUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    reminder_enabled = Column(Boolean, nullable=False, default=False)
+    reminder_time = Column(Time, nullable=True)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("habit_id", "user_id", name="uq_habit_reminder"),
+    )

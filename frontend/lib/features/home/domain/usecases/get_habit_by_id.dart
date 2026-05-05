@@ -6,5 +6,6 @@ class GetHabitById {
 
   GetHabitById(this._repository);
 
-  Future<TodayHabitEntity?> call(String habitId) => _repository.getHabitById(habitId);
+  Future<TodayHabitEntity?> call(String habitId, String userId) =>
+      _repository.getHabitById(habitId, userId);
 }

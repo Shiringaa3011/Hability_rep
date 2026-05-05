@@ -14,6 +14,7 @@ from app.schemas.gamification import (
     UserPointsResponse,
 )
 
+from app.domain.models.gamification import calculate_level
 from app.infrastructure.services.scheduler_service import send_or_queue
 from app.infrastructure.database.models import (
     UserModel,
@@ -64,8 +65,8 @@ async def complete_habit(
                     )
                 )
         user = await db.get(UserModel, request.user_id)
-        old_level = (user.total_points - completion.points_earned) // 100
-        new_level = user.total_points // 100
+        old_level = calculate_level(user.total_points - completion.points_earned)
+        new_level = calculate_level(user.total_points)
 
         if new_level > old_level:
             db.add(NotificationModel(
@@ -101,21 +102,72 @@ async def complete_habit(
 
         habit = await db.get(HabitModel, request.habit_id)
         if habit and habit.group_id:
-            members_stmt = (
-                select(
-                    GroupMemberModel,
-                    func.coalesce(func.sum(HabitCompletionModel.points_earned), 0).label("total")
-                )
-                .outerjoin(HabitCompletionModel, HabitCompletionModel.user_id == GroupMemberModel.user_id)
-                .where(GroupMemberModel.group_id == habit.group_id)
-                .group_by(GroupMemberModel.id)
-                .order_by(func.coalesce(func.sum(HabitCompletionModel.points_earned), 0).desc())
+            group_habits_stmt = select(HabitModel.id).where(
+                HabitModel.group_id == habit.group_id
             )
-            members_rows = (await db.execute(members_stmt)).all()
+            group_habit_ids = (await db.execute(group_habits_stmt)).scalars().all()
+
+            if group_habit_ids:
+                members_stmt = (
+                    select(
+                        GroupMemberModel,
+                        func.coalesce(
+                            func.sum(HabitCompletionModel.points_earned).filter(
+                                HabitCompletionModel.habit_id.in_(group_habit_ids)
+                            ),
+                            0,
+                        ).label("total"),
+                    )
+                    .outerjoin(
+                        HabitCompletionModel,
+                        HabitCompletionModel.user_id == GroupMemberModel.user_id,
+                    )
+                    .where(GroupMemberModel.group_id == habit.group_id)
+                    .group_by(GroupMemberModel.id)
+                    .order_by(
+                        func.coalesce(
+                            func.sum(HabitCompletionModel.points_earned).filter(
+                                HabitCompletionModel.habit_id.in_(group_habit_ids)
+                            ),
+                            0,
+                        ).desc()
+                    )
+                )
+                members_rows = (await db.execute(members_stmt)).all()
 
             if members_rows:
                 new_leader_member = members_rows[0][0]
-                if new_leader_member.user_id == request.user_id:
+                old_members_stmt = (
+                    select(
+                        GroupMemberModel,
+                        func.coalesce(
+                            func.sum(HabitCompletionModel.points_earned).filter(
+                                HabitCompletionModel.habit_id.in_(group_habit_ids),
+                                HabitCompletionModel.id != completion.id,
+                            ),
+                            0,
+                        ).label("total"),
+                    )
+                    .outerjoin(
+                        HabitCompletionModel,
+                        HabitCompletionModel.user_id == GroupMemberModel.user_id,
+                    )
+                    .where(GroupMemberModel.group_id == habit.group_id)
+                    .group_by(GroupMemberModel.id)
+                    .order_by(
+                        func.coalesce(
+                            func.sum(HabitCompletionModel.points_earned).filter(
+                                HabitCompletionModel.habit_id.in_(group_habit_ids),
+                                HabitCompletionModel.id != completion.id,
+                            ),
+                            0,
+                        ).desc()
+                    )
+                )
+                old_rows = (await db.execute(old_members_stmt)).all()
+                old_leader_id = old_rows[0][0].user_id if old_rows else None
+
+                if new_leader_member.user_id == request.user_id and old_leader_id != request.user_id:
                     group = await db.get(GroupModel, habit.group_id)
                     if group:
                         db.add(NotificationModel(

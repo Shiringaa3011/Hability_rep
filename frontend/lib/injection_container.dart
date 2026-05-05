@@ -28,7 +28,6 @@ import 'features/groups/data/repositories/group_repository_impl.dart';
 import 'features/groups/domain/repositories/group_repository.dart';
 import 'features/groups/domain/usecases/get_group_details.dart';
 import 'features/groups/domain/usecases/get_user_groups.dart';
-import 'features/groups/domain/usecases/join_group.dart';
 import 'features/groups/domain/usecases/leave_group.dart';
 import 'features/groups/domain/usecases/remove_member.dart';
 import 'features/groups/domain/usecases/send_reaction.dart';
@@ -77,7 +76,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => LeaveGroup(sl()));
   sl.registerLazySingleton(() => RemoveMember(sl()));
   sl.registerLazySingleton(() => SendReaction(sl()));
-  sl.registerLazySingleton(() => const JoinGroup());
   sl.registerLazySingleton(() => CreateGroup(sl()));
 
   sl.registerLazySingleton(() => GetTodayHabitsForDay(sl()));

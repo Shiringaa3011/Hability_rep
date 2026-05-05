@@ -4,6 +4,7 @@ from typing import Optional, Tuple
 from uuid import UUID
 from app.domain.services.achievement_service import AchievementService
 
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,7 +15,7 @@ from app.domain.models.gamification import (
     points_for_next_level,
 )
 from app.domain.models.habit import HabitFrequency
-from app.infrastructure.database.models import HabitCompletionModel, HabitModel
+from app.infrastructure.database.models import HabitCompletionModel, HabitModel, GroupMemberModel
 from app.infrastructure.database.repositories.achievement_repository import (
     AchievementRepository,
     UserAchievementRepository,
@@ -46,7 +47,16 @@ class GamificationService:
             raise ValueError("Habit not found or not active")
 
         if habit.user_id != user_id:
-            raise ValueError("Habit does not belong to user")
+            if habit.group_id:
+                member_stmt = select(GroupMemberModel).where(
+                    GroupMemberModel.group_id == habit.group_id,
+                    GroupMemberModel.user_id == user_id,
+                )
+                is_member = (await self.session.execute(member_stmt)).scalar_one_or_none()
+                if not is_member:
+                    raise ValueError("Habit does not belong to user")
+            else:
+                raise ValueError("Habit does not belong to user")
 
         already_completed = await self.completion_repo.check_completion_exists(
             habit_id, user_id, completion_date
@@ -57,14 +67,13 @@ class GamificationService:
         current_streak = await self._calculate_streak(habit)
 
         base_points = habit.difficulty * 10
-        points_earned = calculate_points_with_streak(base_points, current_streak)  # type: ignore[arg-type]
+        points_earned = calculate_points_with_streak(base_points, current_streak)
 
         completion = HabitCompletionModel(
             id=uuid.uuid4(),
             habit_id=habit_id,
             user_id=user_id,
             completed_at=datetime.combine(completion_date, datetime.now().time()),
-            #completion_date=completion_date,
             points_earned=points_earned,
             current_streak=current_streak,
         )
@@ -75,11 +84,7 @@ class GamificationService:
             raise ValueError("Habit already completed today") from exc
 
         await self.user_repo.add_points(user_id, points_earned)
-
         await self.update_user_level(user_id)
-
-        #achievement_service = AchievementService(self.session)
-        #await achievement_service.check_and_award_achievements(user_id)
 
         return completion, True
 

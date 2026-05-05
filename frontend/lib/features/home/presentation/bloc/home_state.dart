@@ -14,6 +14,7 @@ class HomeState {
   final List<TodayHabitEntity> habits;
   final bool isLoading;
   final String? error;
+  final bool isOffline;
 
   const HomeState({
     required this.selectedDay,
@@ -22,6 +23,7 @@ class HomeState {
     this.habits = const [],
     this.isLoading = false,
     this.error,
+    this.isOffline = false,
   });
 
   HomeState copyWith({
@@ -32,6 +34,7 @@ class HomeState {
     bool? isLoading,
     String? error,
     bool clearError = false,
+    bool? isOffline,
   }) {
     return HomeState(
       selectedDay: selectedDay ?? this.selectedDay,
@@ -42,6 +45,7 @@ class HomeState {
       habits: habits ?? this.habits,
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
+      isOffline: isOffline ?? this.isOffline,
     );
   }
 }

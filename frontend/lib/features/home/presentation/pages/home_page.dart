@@ -14,12 +14,20 @@ import '../../../../core/utils/date_helpers.dart';
 import '../../../../core/error/error_screen.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({required this.userId, super.key});
+  const HomePage({required this.userId, this.homeBloc, super.key});
 
   final String userId;
+  final HomeBloc? homeBloc;
 
   @override
   Widget build(BuildContext context) {
+    if (homeBloc != null) {
+      return BlocProvider<HomeBloc>.value(
+        value: homeBloc!,
+        child: _HabitsScaffold(userId: userId),
+      );
+    }
+
     return BlocProvider(
       create: (_) => HomeBloc(
         userId: userId,
@@ -84,6 +92,15 @@ class _HabitsScaffold extends StatelessWidget {
                   _GroupChips(state: state),
                   const SizedBox(height: AppSpacing.lg),
                 ],
+                if (state.isOffline)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: Text(
+                      'Офлайн-режим',
+                      style: AppTextStyles.caption.copyWith(color: colors.mutedForeground),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 _ProgressSummary(habits: state.habits),
                 const SizedBox(height: AppSpacing.xl),
                 if (state.habits.isEmpty)
@@ -100,7 +117,12 @@ class _HabitsScaffold extends StatelessWidget {
                   ...state.habits.map(
                     (h) => Padding(
                       padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                      child: _HabitTile(habit: h, userId: userId, selectedDay: state.selectedDay,),
+                      child: _HabitTile(
+                        habit: h,
+                        userId: userId,
+                        selectedDay: state.selectedDay,
+                        isOffline: state.isOffline,
+                      ),
                     ),
                   ),
               ],
@@ -143,11 +165,6 @@ class _Header extends StatelessWidget {
           getMonthName(day).toUpperCase(),
           style: AppTextStyles.overline.copyWith(color: colors.mutedForeground),
         ),
-        /*const SizedBox(height: 4),
-        Text(
-          '${_HabitsScaffold.weekdayLabel(day)}, ${day.day}',
-          style: AppTextStyles.bodySmall.copyWith(color: colors.mutedForeground),
-        ),*/
       ],
     );
   }
@@ -198,11 +215,13 @@ class _HabitTile extends StatelessWidget {
     required this.habit,
     required this.userId,
     required this.selectedDay,
+    this.isOffline = false,
   });
 
   final TodayHabitEntity habit;
   final String userId;
   final DateTime selectedDay;
+  final bool isOffline;
 
   @override
   Widget build(BuildContext context) {
@@ -224,7 +243,7 @@ class _HabitTile extends StatelessWidget {
           children: [
             DSCheckCircle(
               checked: habit.completedToday,
-              onTap: isFutureDay
+              onTap: (isFutureDay || isOffline)
                   ? () {}
                   : () {
                       context.read<HomeBloc>().add(
@@ -283,12 +302,27 @@ class _HabitTile extends StatelessWidget {
   static String? _subtitle(TodayHabitEntity h) {
     if (h.description != null && h.description!.isNotEmpty) return h.description;
     final parts = <String>[
-      if (h.scheduledTimeLabel != null) h.scheduledTimeLabel!,
+      if (h.scheduledTimeLabel != null) _formatUtcTime(h.scheduledTimeLabel!),
       if (h.frequencyLabel != null) h.frequencyLabel!,
       if (h.groupName != null) h.groupName!,
     ];
     if (parts.isEmpty) return null;
     return parts.join(' · ');
+  }
+
+
+  static String _formatUtcTime(String utcTime) {
+    try {
+      final p = utcTime.split(':');
+      final h = int.parse(p[0]);
+      final m = int.parse(p[1]);
+      final now = DateTime.now();
+      final utc = DateTime.utc(now.year, now.month, now.day, h, m);
+      final local = utc.toLocal();
+      return '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return utcTime;
+    }
   }
 }
 

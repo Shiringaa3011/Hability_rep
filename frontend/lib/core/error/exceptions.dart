@@ -31,8 +31,11 @@ AppException fromDioException(DioException e) {
   switch (e.type) {
     case DioExceptionType.connectionTimeout:
     case DioExceptionType.receiveTimeout:
+    case DioExceptionType.sendTimeout:
     case DioExceptionType.connectionError:
       return const NetworkException('Нет подключения к интернету');
+    case DioExceptionType.badCertificate:
+      return const NetworkException('Ошибка сертификата');
     case DioExceptionType.badResponse:
       final statusCode = e.response?.statusCode;
       if (statusCode == 404) {
@@ -41,7 +44,9 @@ AppException fromDioException(DioException e) {
         return const ServerException('Ошибка сервера');
       }
       return const ServerException('Ошибка сервера');
-    default:
+    case DioExceptionType.cancel:
+      return const NetworkException('Запрос отменён');
+    case DioExceptionType.unknown:
       return const NetworkException('Что-то пошло не так');
   }
 }

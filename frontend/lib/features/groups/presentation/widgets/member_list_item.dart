@@ -40,7 +40,7 @@ class MemberListItem extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          if (showLeaderBadge)
+          if (showLeaderBadge) ...[
             Padding(
               padding: const EdgeInsets.only(left: 6),
               child: Icon(
@@ -49,6 +49,24 @@ class MemberListItem extends StatelessWidget {
                 color: theme.colorScheme.tertiary,
               ),
             ),
+            if (member.reactions > 0)
+              Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.favorite, size: 14, color: theme.colorScheme.error),
+                    const SizedBox(width: 2),
+                    Text(
+                      '${member.reactions}',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.error,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
         ],
       ),
       subtitle: Text('${member.points} баллов'),
@@ -58,13 +76,7 @@ class MemberListItem extends StatelessWidget {
               tooltip: 'Удалить из группы',
               onPressed: onRemove,
             )
-          : (showLeaderBadge && member.reactions > 0)
-              ? Chip(
-                  // добавить значок реакции
-                  label: Text('star ${member.reactions}'),
-                  visualDensity: VisualDensity.compact,
-                )
-              : null,
+          : null,
     );
   }
 }

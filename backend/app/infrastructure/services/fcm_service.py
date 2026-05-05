@@ -25,6 +25,12 @@ async def send_push_notification(
                 title=title,
                 body=body,
             ),
+            android=messaging.AndroidConfig(
+                notification=messaging.AndroidNotification(
+                    icon='ic_notification',
+                    color='#418D50',
+                ),
+            ),
             token=device_token,
         )
         response = messaging.send(message)

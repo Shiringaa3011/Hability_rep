@@ -10,8 +10,15 @@ import '../../../../core/design_system/theme/app_text_styles.dart';
 
 class CreateHabitPage extends StatefulWidget {
   final String userId;
+  final GroupRepository? groupRepository;
+  final UpsertHabitDefinition? upsertHabitDefinition;
 
-  const CreateHabitPage({required this.userId, super.key});
+  const CreateHabitPage({
+    required this.userId,
+    this.groupRepository,
+    this.upsertHabitDefinition,
+    super.key,
+  });
 
   @override
   State<CreateHabitPage> createState() => _CreateHabitPageState();
@@ -37,7 +44,8 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
   @override
   void initState() {
     super.initState();
-    _groupRepository = di.sl<GroupRepository>();
+    _groupRepository =
+        widget.groupRepository ?? di.sl<GroupRepository>();
     _loadGroups();
   }
 
@@ -140,7 +148,10 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
     );
 
     try {
-      await di.sl<UpsertHabitDefinition>()(widget.userId, habit);
+      await (widget.upsertHabitDefinition ?? di.sl<UpsertHabitDefinition>())(
+        widget.userId,
+        habit,
+      );
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } catch (_) {
@@ -367,6 +378,7 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
               ),
             const SizedBox(height: 24),
             FilledButton(
+              key: const Key('habit_save_button'),
               onPressed: canSave ? _save : null,
               child: const Text('Сохранить'),
             ),

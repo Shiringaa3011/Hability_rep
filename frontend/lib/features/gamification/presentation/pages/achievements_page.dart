@@ -41,22 +41,28 @@ class _AchievementsScaffold extends StatelessWidget {
     final colors = context.appColors;
     return Scaffold(
       backgroundColor: colors.background,
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.xl,
-          AppSpacing.xxl,
-          AppSpacing.xl,
-          AppSpacing.bottomNavReserve,
+      body: RefreshIndicator(
+        onRefresh: () async {
+          context.read<LevelBloc>().add(RefreshLevel(userId));
+          context.read<AchievementsBloc>().add(RefreshAchievements(userId));
+        },
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xl,
+            AppSpacing.xxl,
+            AppSpacing.xl,
+            AppSpacing.bottomNavReserve,
+          ),
+          children: [
+            const _Title(),
+            const SizedBox(height: AppSpacing.xl),
+            const _LevelBlock(),
+            const SizedBox(height: AppSpacing.xl),
+            const _EarnedSection(),
+            const SizedBox(height: AppSpacing.xl),
+            _AllAchievementsSection(userId: userId),
+          ],
         ),
-        children: [
-          const _Title(),
-          const SizedBox(height: AppSpacing.xl),
-          const _LevelBlock(),
-          const SizedBox(height: AppSpacing.xl),
-          const _EarnedSection(),
-          const SizedBox(height: AppSpacing.xl),
-          _AllAchievementsSection(userId: userId),
-        ],
       ),
     );
   }

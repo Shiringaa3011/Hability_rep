@@ -157,6 +157,7 @@ class MockGamificationRemoteDataSource extends _i1.Mock
   _i6.Future<List<_i10.NewAchievementInfo>> completeHabit(
     String? habitId,
     String? userId,
+    DateTime? completionDate,
   ) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -164,6 +165,7 @@ class MockGamificationRemoteDataSource extends _i1.Mock
           [
             habitId,
             userId,
+            completionDate,
           ],
         ),
         returnValue: _i6.Future<List<_i10.NewAchievementInfo>>.value(

@@ -15,6 +15,7 @@ from app.infrastructure.database.models import (
     NotificationModel,
     UserModel,
     HabitModel,
+    LeaderReactionModel,
 )
 from app.schemas.mobile import (
     GroupCreateRequest,
@@ -135,16 +136,32 @@ async def get_group_detail(
     rows = (await db.execute(members_stmt)).all()
     members: list[GroupMemberResponse] = []
     for member, username in rows:
-        points_stmt = select(func.coalesce(func.sum(HabitCompletionModel.points_earned), 0)).where(
-            HabitCompletionModel.user_id == member.user_id
+        points_stmt = select(
+            func.coalesce(func.sum(HabitCompletionModel.points_earned), 0)
+        ).where(
+            HabitCompletionModel.user_id == member.user_id,
+            HabitCompletionModel.habit_id.in_(
+                select(HabitModel.id).where(HabitModel.group_id == group_id)
+            ),
         )
-        reactions_stmt = select(func.count(NotificationModel.id)).where(
-            NotificationModel.user_id == member.user_id,
-            NotificationModel.kind == "leader_reaction",
-            NotificationModel.group_id == group_id,
+
+        reactions_stmt = select(func.count(LeaderReactionModel.id)).where(
+            LeaderReactionModel.to_user_id == member.user_id,
+            LeaderReactionModel.group_id == group_id,
         )
+
+        current_user_reacted_stmt = select(LeaderReactionModel).where(
+            LeaderReactionModel.group_id == group_id,
+            LeaderReactionModel.from_user_id == current_user_id,
+            LeaderReactionModel.to_user_id == member.user_id,
+        )
+
         points = int((await db.execute(points_stmt)).scalar_one() or 0)
         reactions = int((await db.execute(reactions_stmt)).scalar_one() or 0)
+        current_user_reacted = (
+            await db.execute(current_user_reacted_stmt)
+        ).scalar_one_or_none() is not None
+
         members.append(
             GroupMemberResponse(
                 id=member.id,
@@ -152,10 +169,24 @@ async def get_group_detail(
                 username=username,
                 points=points,
                 reactions=reactions,
+                current_user_reacted=current_user_reacted,
                 joined_at=member.joined_at,
             )
         )
+
     members.sort(key=lambda m: m.points, reverse=True)
+
+    if members:
+        new_leader_id = members[0].user_id
+        old_reactions_stmt = select(LeaderReactionModel).where(
+            LeaderReactionModel.group_id == group_id,
+            LeaderReactionModel.to_user_id != new_leader_id,
+        )
+        old_reactions = (await db.execute(old_reactions_stmt)).scalars().all()
+        for reaction in old_reactions:
+            await db.delete(reaction)
+        if old_reactions:
+            await db.flush()
 
     ach_stmt = (
         select(GroupAchievementModel.name)
@@ -253,14 +284,22 @@ async def react_to_leader(
     to_user_id: UUID = Query(...),
     db: AsyncSession = Depends(get_db),
 ):
-    leader_note = NotificationModel(
-        user_id=to_user_id,
-        title="Поддержка лидера",
-        body="Участник группы отправил вам реакцию за лидерство.",
-        kind="leader_reaction",
-        group_id=group_id,
+    existing_stmt = select(LeaderReactionModel).where(
+        LeaderReactionModel.group_id == group_id,
+        LeaderReactionModel.from_user_id == from_user_id,
     )
-    db.add(leader_note)
+    existing = (await db.execute(existing_stmt)).scalar_one_or_none()
+    if existing:
+        raise HTTPException(status_code=400, detail="Already reacted")
+
+    if from_user_id == to_user_id:
+        raise HTTPException(status_code=400, detail="Cannot react to yourself")
+
+    db.add(LeaderReactionModel(
+        group_id=group_id,
+        from_user_id=from_user_id,
+        to_user_id=to_user_id,
+    ))
 
     leader = await db.get(UserModel, to_user_id)
     from_user = await db.get(UserModel, from_user_id)
@@ -269,10 +308,12 @@ async def react_to_leader(
             session=db,
             user_id=to_user_id,
             title="Поддержка лидера",
-            body=f"{from_user.username if from_user else 'Участник'} отправил вам реакцию за лидерство.",
+            body=f"{from_user.username if from_user else 'Участник'} отправил вам реакцию.",
             kind="leader_reaction",
             group_id=group_id,
         )
+    await db.flush()
+
 
 @router.post("/invites", response_model=GroupInviteResponse, status_code=status.HTTP_201_CREATED)
 async def create_invite(

@@ -1,5 +1,5 @@
-import '../entities/today_habit_entity.dart';
 import '../repositories/home_repository.dart';
+import '../entities/today_habit_entity.dart';
 
 class GetTodayHabitsForDay {
   final HomeRepository _repository;
@@ -10,6 +10,12 @@ class GetTodayHabitsForDay {
     required String userId,
     required DateTime day,
     String? groupId,
+    bool forceRefresh = false,
   }) =>
-      _repository.getHabitsForDay(userId: userId, day: day, groupId: groupId);
+      _repository.getHabitsForDay(
+        userId: userId,
+        day: day,
+        groupId: groupId,
+        forceRefresh: forceRefresh,
+      );
 }

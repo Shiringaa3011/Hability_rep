@@ -19,15 +19,24 @@ import '../../../../core/error/error_screen.dart';
 class GroupDetailPage extends StatelessWidget {
   final String groupId;
   final String currentUserId;
+  final GroupDetailBloc? groupDetailBloc;
 
   const GroupDetailPage({
     required this.groupId,
     required this.currentUserId,
+    this.groupDetailBloc,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (groupDetailBloc != null) {
+      return BlocProvider<GroupDetailBloc>.value(
+        value: groupDetailBloc!,
+        child: const _GroupDetailView(),
+      );
+    }
+
     return BlocProvider(
       create: (_) => GroupDetailBloc(
         groupId: groupId,
@@ -180,6 +189,7 @@ class _GroupDetailView extends StatelessWidget {
                               state.leader!.userId != state.currentUserId)
                             ReactionToLeaderButton(
                               enabled: !state.isLoading,
+                              alreadyReacted: state.leader!.currentUserReacted,
                               reactionCount: state.leader!.reactions,
                               onPressed: () => context
                                   .read<GroupDetailBloc>()
@@ -240,6 +250,7 @@ Future<void> _showDeleteGroupDialog(BuildContext context) async {
 
 Future<void> _showInviteDialog(BuildContext context, GroupDetailState state) async {
   final repo = di.sl<GroupRepository>();
+  final memberIds = state.detail?.members.map((m) => m.userId).toList() ?? [];
   
   await showModalBottomSheet(
     context: context,
@@ -252,6 +263,7 @@ Future<void> _showInviteDialog(BuildContext context, GroupDetailState state) asy
       groupId: state.groupId,
       fromUserId: state.currentUserId,
       repository: repo,
+      memberIds: memberIds,
     ),
   );
 }
@@ -260,11 +272,13 @@ class _InviteSheet extends StatefulWidget {
   final String groupId;
   final String fromUserId;
   final GroupRepository repository;
+  final List<String> memberIds;
 
   const _InviteSheet({
     required this.groupId,
     required this.fromUserId,
     required this.repository,
+    required this.memberIds,
   });
 
   @override
@@ -364,21 +378,32 @@ Future<void> _search(String query) async {
           ),
           if (_results.isNotEmpty) ...[
             const SizedBox(height: 8),
-            ..._results.map((user) => ListTile(
-              leading: CircleAvatar(
-                backgroundColor: colors.primary,
-                child: Text(
-                  user['username'][0].toUpperCase(),
-                  style: TextStyle(color: colors.primaryForeground),
+            ..._results.map((user) {
+              final isMember = widget.memberIds.contains(user['user_id']);
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: isMember ? colors.muted : colors.primary,
+                  child: Text(
+                    user['username'][0].toUpperCase(),
+                    style: TextStyle(
+                      color: isMember ? colors.mutedForeground : colors.primaryForeground,
+                    ),
+                  ),
                 ),
-              ),
-              title: Text(user['username']),
-              selected: _selectedUser?['user_id'] == user['user_id'],
-              onTap: () {
-                setState(() => _selectedUser = user);
-                _controller.text = user['username'];
-              },
-            )),
+                title: Text(
+                  user['username'],
+                  style: isMember ? TextStyle(color: colors.mutedForeground) : null,
+                ),
+                enabled: !isMember,
+                selected: _selectedUser?['user_id'] == user['user_id'],
+                onTap: isMember
+                    ? null
+                    : () {
+                        setState(() => _selectedUser = user);
+                        _controller.text = user['username'];
+                      },
+              );
+            }),
           ],
           if (_noResults && _controller.text.length >= 2)
   Padding(

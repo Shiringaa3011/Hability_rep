@@ -27,6 +27,7 @@ class GroupMemberResponse(BaseModel):
     username: str
     points: int
     reactions: int
+    current_user_reacted: bool = False
     joined_at: datetime
 
 
@@ -103,6 +104,7 @@ class NotificationSendRequest(BaseModel):
 class HabitCompletionToggleRequest(BaseModel):
     day: date
     completed: bool
+    user_id: UUID
 
 
 class GroupInviteCreateRequest(BaseModel):

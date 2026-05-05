@@ -27,29 +27,39 @@ class TodayHabitEntity extends Equatable {
     this.dayOfWeek,
   });
 
+  static const _unset = Object();
+
   TodayHabitEntity copyWith({
     String? id,
     String? title,
-    String? description,
-    String? scheduledTimeLabel,
-    String? frequencyLabel,
+    Object? description = _unset,
+    Object? scheduledTimeLabel = _unset,
+    Object? frequencyLabel = _unset,
     bool? completedToday,
-    String? groupId,
-    String? groupName,
+    Object? groupId = _unset,
+    Object? groupName = _unset,
     bool? remindersEnabled,
-    String? reminderTimeLabel,
+    Object? reminderTimeLabel = _unset,
+    Object? dayOfWeek = _unset,
   }) {
     return TodayHabitEntity(
       id: id ?? this.id,
       title: title ?? this.title,
-      description: description ?? this.description,
-      scheduledTimeLabel: scheduledTimeLabel ?? this.scheduledTimeLabel,
-      frequencyLabel: frequencyLabel ?? this.frequencyLabel,
+      description: description == _unset ? this.description : description as String?,
+      scheduledTimeLabel: scheduledTimeLabel == _unset
+          ? this.scheduledTimeLabel
+          : scheduledTimeLabel as String?,
+      frequencyLabel: frequencyLabel == _unset
+          ? this.frequencyLabel
+          : frequencyLabel as String?,
       completedToday: completedToday ?? this.completedToday,
-      groupId: groupId ?? this.groupId,
-      groupName: groupName ?? this.groupName,
+      groupId: groupId == _unset ? this.groupId : groupId as String?,
+      groupName: groupName == _unset ? this.groupName : groupName as String?,
       remindersEnabled: remindersEnabled ?? this.remindersEnabled,
-      reminderTimeLabel: reminderTimeLabel ?? this.reminderTimeLabel,
+      reminderTimeLabel: reminderTimeLabel == _unset
+          ? this.reminderTimeLabel
+          : reminderTimeLabel as String?,
+      dayOfWeek: dayOfWeek == _unset ? this.dayOfWeek : dayOfWeek as int?,
     );
   }
 
