@@ -28,6 +28,8 @@ mixin _$HabitStatsModel {
   int get totalPointsEarned;
   @JsonKey(name: 'completion_rate')
   double get completionRate;
+  @JsonKey(name: 'missed_count')
+  int get missedCount;
 
   /// Create a copy of HabitStatsModel
   /// with the given fields replaced by the non-null parameter values.
@@ -57,7 +59,9 @@ mixin _$HabitStatsModel {
             (identical(other.totalPointsEarned, totalPointsEarned) ||
                 other.totalPointsEarned == totalPointsEarned) &&
             (identical(other.completionRate, completionRate) ||
-                other.completionRate == completionRate));
+                other.completionRate == completionRate) &&
+            (identical(other.missedCount, missedCount) ||
+                other.missedCount == missedCount));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -70,11 +74,12 @@ mixin _$HabitStatsModel {
       currentStreak,
       maxStreak,
       totalPointsEarned,
-      completionRate);
+      completionRate,
+      missedCount);
 
   @override
   String toString() {
-    return 'HabitStatsModel(habitId: $habitId, habitName: $habitName, totalCompletions: $totalCompletions, currentStreak: $currentStreak, maxStreak: $maxStreak, totalPointsEarned: $totalPointsEarned, completionRate: $completionRate)';
+    return 'HabitStatsModel(habitId: $habitId, habitName: $habitName, totalCompletions: $totalCompletions, currentStreak: $currentStreak, maxStreak: $maxStreak, totalPointsEarned: $totalPointsEarned, completionRate: $completionRate, missedCount: $missedCount)';
   }
 }
 
@@ -91,7 +96,8 @@ abstract mixin class $HabitStatsModelCopyWith<$Res> {
       @JsonKey(name: 'current_streak') int currentStreak,
       @JsonKey(name: 'max_streak') int maxStreak,
       @JsonKey(name: 'total_points_earned') int totalPointsEarned,
-      @JsonKey(name: 'completion_rate') double completionRate});
+      @JsonKey(name: 'completion_rate') double completionRate,
+      @JsonKey(name: 'missed_count') int missedCount});
 }
 
 /// @nodoc
@@ -114,6 +120,7 @@ class _$HabitStatsModelCopyWithImpl<$Res>
     Object? maxStreak = null,
     Object? totalPointsEarned = null,
     Object? completionRate = null,
+    Object? missedCount = null,
   }) {
     return _then(_self.copyWith(
       habitId: null == habitId
@@ -144,6 +151,10 @@ class _$HabitStatsModelCopyWithImpl<$Res>
           ? _self.completionRate
           : completionRate // ignore: cast_nullable_to_non_nullable
               as double,
+      missedCount: null == missedCount
+          ? _self.missedCount
+          : missedCount // ignore: cast_nullable_to_non_nullable
+              as int,
     ));
   }
 }
@@ -248,7 +259,8 @@ extension HabitStatsModelPatterns on HabitStatsModel {
             @JsonKey(name: 'current_streak') int currentStreak,
             @JsonKey(name: 'max_streak') int maxStreak,
             @JsonKey(name: 'total_points_earned') int totalPointsEarned,
-            @JsonKey(name: 'completion_rate') double completionRate)?
+            @JsonKey(name: 'completion_rate') double completionRate,
+            @JsonKey(name: 'missed_count') int missedCount)?
         $default, {
     required TResult orElse(),
   }) {
@@ -262,7 +274,8 @@ extension HabitStatsModelPatterns on HabitStatsModel {
             _that.currentStreak,
             _that.maxStreak,
             _that.totalPointsEarned,
-            _that.completionRate);
+            _that.completionRate,
+            _that.missedCount);
       case _:
         return orElse();
     }
@@ -290,7 +303,8 @@ extension HabitStatsModelPatterns on HabitStatsModel {
             @JsonKey(name: 'current_streak') int currentStreak,
             @JsonKey(name: 'max_streak') int maxStreak,
             @JsonKey(name: 'total_points_earned') int totalPointsEarned,
-            @JsonKey(name: 'completion_rate') double completionRate)
+            @JsonKey(name: 'completion_rate') double completionRate,
+            @JsonKey(name: 'missed_count') int missedCount)
         $default,
   ) {
     final _that = this;
@@ -303,7 +317,8 @@ extension HabitStatsModelPatterns on HabitStatsModel {
             _that.currentStreak,
             _that.maxStreak,
             _that.totalPointsEarned,
-            _that.completionRate);
+            _that.completionRate,
+            _that.missedCount);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -330,7 +345,8 @@ extension HabitStatsModelPatterns on HabitStatsModel {
             @JsonKey(name: 'current_streak') int currentStreak,
             @JsonKey(name: 'max_streak') int maxStreak,
             @JsonKey(name: 'total_points_earned') int totalPointsEarned,
-            @JsonKey(name: 'completion_rate') double completionRate)?
+            @JsonKey(name: 'completion_rate') double completionRate,
+            @JsonKey(name: 'missed_count') int missedCount)?
         $default,
   ) {
     final _that = this;
@@ -343,7 +359,8 @@ extension HabitStatsModelPatterns on HabitStatsModel {
             _that.currentStreak,
             _that.maxStreak,
             _that.totalPointsEarned,
-            _that.completionRate);
+            _that.completionRate,
+            _that.missedCount);
       case _:
         return null;
     }
@@ -360,7 +377,8 @@ class _HabitStatsModel extends HabitStatsModel {
       @JsonKey(name: 'current_streak') required this.currentStreak,
       @JsonKey(name: 'max_streak') required this.maxStreak,
       @JsonKey(name: 'total_points_earned') required this.totalPointsEarned,
-      @JsonKey(name: 'completion_rate') required this.completionRate})
+      @JsonKey(name: 'completion_rate') required this.completionRate,
+      @JsonKey(name: 'missed_count') this.missedCount = 0})
       : super._();
   factory _HabitStatsModel.fromJson(Map<String, dynamic> json) =>
       _$HabitStatsModelFromJson(json);
@@ -386,6 +404,9 @@ class _HabitStatsModel extends HabitStatsModel {
   @override
   @JsonKey(name: 'completion_rate')
   final double completionRate;
+  @override
+  @JsonKey(name: 'missed_count')
+  final int missedCount;
 
   /// Create a copy of HabitStatsModel
   /// with the given fields replaced by the non-null parameter values.
@@ -419,7 +440,9 @@ class _HabitStatsModel extends HabitStatsModel {
             (identical(other.totalPointsEarned, totalPointsEarned) ||
                 other.totalPointsEarned == totalPointsEarned) &&
             (identical(other.completionRate, completionRate) ||
-                other.completionRate == completionRate));
+                other.completionRate == completionRate) &&
+            (identical(other.missedCount, missedCount) ||
+                other.missedCount == missedCount));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -432,11 +455,12 @@ class _HabitStatsModel extends HabitStatsModel {
       currentStreak,
       maxStreak,
       totalPointsEarned,
-      completionRate);
+      completionRate,
+      missedCount);
 
   @override
   String toString() {
-    return 'HabitStatsModel(habitId: $habitId, habitName: $habitName, totalCompletions: $totalCompletions, currentStreak: $currentStreak, maxStreak: $maxStreak, totalPointsEarned: $totalPointsEarned, completionRate: $completionRate)';
+    return 'HabitStatsModel(habitId: $habitId, habitName: $habitName, totalCompletions: $totalCompletions, currentStreak: $currentStreak, maxStreak: $maxStreak, totalPointsEarned: $totalPointsEarned, completionRate: $completionRate, missedCount: $missedCount)';
   }
 }
 
@@ -455,7 +479,8 @@ abstract mixin class _$HabitStatsModelCopyWith<$Res>
       @JsonKey(name: 'current_streak') int currentStreak,
       @JsonKey(name: 'max_streak') int maxStreak,
       @JsonKey(name: 'total_points_earned') int totalPointsEarned,
-      @JsonKey(name: 'completion_rate') double completionRate});
+      @JsonKey(name: 'completion_rate') double completionRate,
+      @JsonKey(name: 'missed_count') int missedCount});
 }
 
 /// @nodoc
@@ -478,6 +503,7 @@ class __$HabitStatsModelCopyWithImpl<$Res>
     Object? maxStreak = null,
     Object? totalPointsEarned = null,
     Object? completionRate = null,
+    Object? missedCount = null,
   }) {
     return _then(_HabitStatsModel(
       habitId: null == habitId
@@ -508,6 +534,10 @@ class __$HabitStatsModelCopyWithImpl<$Res>
           ? _self.completionRate
           : completionRate // ignore: cast_nullable_to_non_nullable
               as double,
+      missedCount: null == missedCount
+          ? _self.missedCount
+          : missedCount // ignore: cast_nullable_to_non_nullable
+              as int,
     ));
   }
 }

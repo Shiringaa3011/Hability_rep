@@ -17,6 +17,7 @@ class UserStatsResponse(BaseModel):
     total_points_earned: int = Field(
         ..., ge=0, description="Total points earned in period"
     )
+    missed_count: int = Field(..., ge=0, description="Missed completions in period")
     updated_at: datetime = Field(..., description="Last update timestamp")
 
     class Config:
@@ -31,6 +32,7 @@ class HabitStatsResponse(BaseModel):
     max_streak: int = Field(..., ge=0, description="Maximum streak")
     total_points_earned: int = Field(..., ge=0, description="Total points earned")
     completion_rate: float = Field(..., ge=0, le=100, description="Completion rate (%)")
+    missed_count: int = Field(..., ge=0, description="Missed completions in period")
 
     class Config:
         from_attributes = True

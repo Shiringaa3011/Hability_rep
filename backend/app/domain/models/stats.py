@@ -22,6 +22,7 @@ class UserStats:
     max_streak: int
     total_points_period: int
     updated_at: datetime
+    missed_count: int = 0
 
     def __post_init__(self):
         if not 0 <= self.completion_rate <= 100:
@@ -30,6 +31,8 @@ class UserStats:
             raise ValueError("Current streak cannot be negative")
         if self.max_streak < 0:
             raise ValueError("Max streak cannot be negative")
+        if self.missed_count < 0:
+            raise ValueError("Missed count cannot be negative")
 
 
 @dataclass

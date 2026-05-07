@@ -48,6 +48,7 @@ class StatsService:
             if expected_completions > 0
             else 0
         )
+        missed_count = max(0, expected_completions - total_completions)
 
         current_streak, max_streak = await self._calculate_streaks(user_id)
 
@@ -63,6 +64,7 @@ class StatsService:
             max_streak=max_streak,
             total_points_period=total_points,  # type: ignore[arg-type]
             updated_at=datetime.now(),
+            missed_count=missed_count,
         )
 
         await self.stats_repo.upsert_stats(
@@ -106,6 +108,7 @@ class StatsService:
             if expected_completions > 0
             else 0
         )
+        missed_count = max(0, expected_completions - total_completions)
 
         return HabitStats(
             habit_id=habit_id,
@@ -115,6 +118,7 @@ class StatsService:
             max_streak=max_streak,
             total_points_earned=total_points,  # type: ignore[arg-type]
             completion_rate=round(completion_rate, 2),
+            missed_count=missed_count,
         )
 
     async def get_user_habits_stats(

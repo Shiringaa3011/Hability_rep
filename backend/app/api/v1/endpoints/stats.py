@@ -41,6 +41,7 @@ async def get_user_stats(
         current_streak=stats.current_streak,
         max_streak=stats.max_streak,
         total_points_earned=stats.total_points_period,
+        missed_count=stats.missed_count,
         updated_at=stats.updated_at,
     )
 
@@ -67,6 +68,7 @@ async def get_user_habits_stats(
                 max_streak=hs.max_streak,
                 total_points_earned=hs.total_points_earned,
                 completion_rate=hs.completion_rate,
+                missed_count=hs.missed_count,
             )
             for hs in habits_stats
         ],
