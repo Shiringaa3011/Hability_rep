@@ -1,6 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+from typing import List
 from uuid import UUID
 
 
@@ -29,3 +30,24 @@ class UserStats:
             raise ValueError("Current streak cannot be negative")
         if self.max_streak < 0:
             raise ValueError("Max streak cannot be negative")
+
+
+@dataclass
+class GroupMemberStats:
+    user_id: UUID
+    username: str
+    rank: int
+    total_completions: int
+    completion_rate: float
+    total_points: int
+
+
+@dataclass
+class GroupStats:
+    group_id: UUID
+    period: StatsPeriod
+    members: List[GroupMemberStats] = field(default_factory=list)
+    total_points_group: int = 0
+    average_completion_rate: float = 0.0
+    total_completions: int = 0
+    active_members_count: int = 0
