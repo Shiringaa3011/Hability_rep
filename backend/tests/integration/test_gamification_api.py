@@ -1,8 +1,12 @@
 """Integration tests for gamification API endpoints."""
 
-import pytest
-from datetime import date
+import uuid
+from datetime import date, datetime
 
+import pytest
+from sqlalchemy.exc import IntegrityError
+
+from app.infrastructure.database.models import HabitCompletionModel
 from tests.fixtures.database_fixtures import test_user, test_habit
 
 
@@ -80,3 +84,34 @@ class TestGamificationAPI:
         )
         assert response2.status_code == 400
         assert "already completed" in response2.json()["detail"].lower()
+
+    async def test_db_unique_index_blocks_same_day_duplicate(
+        self, db_session, test_user, test_habit
+    ):
+        """DB-level uq_completion_per_day must reject a duplicate insert."""
+        today = date.today()
+        timestamp = datetime.combine(today, datetime.min.time())
+
+        first = HabitCompletionModel(
+            id=uuid.uuid4(),
+            habit_id=test_habit.id,
+            user_id=test_user.id,
+            completed_at=timestamp,
+            points_earned=10,
+            current_streak=1,
+        )
+        db_session.add(first)
+        await db_session.flush()
+
+        duplicate = HabitCompletionModel(
+            id=uuid.uuid4(),
+            habit_id=test_habit.id,
+            user_id=test_user.id,
+            completed_at=timestamp,
+            points_earned=10,
+            current_streak=1,
+        )
+        db_session.add(duplicate)
+
+        with pytest.raises(IntegrityError):
+            await db_session.flush()
