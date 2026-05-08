@@ -16,6 +16,7 @@ abstract class UserStatsModel with _$UserStatsModel {
     @JsonKey(name: 'max_streak') required int maxStreak,
     @JsonKey(name: 'total_points_earned') required int totalPointsEarned,
     @JsonKey(name: 'updated_at') required String updatedAt,
+    @JsonKey(name: 'missed_count') @Default(0) int missedCount,
   }) = _UserStatsModel;
 
   const UserStatsModel._();
@@ -32,6 +33,7 @@ abstract class UserStatsModel with _$UserStatsModel {
       currentStreak: currentStreak,
       maxStreak: maxStreak,
       totalPointsEarned: totalPointsEarned,
+      missedCount: missedCount,
       updatedAt: DateTime.parse(updatedAt),
     );
   }
@@ -45,6 +47,7 @@ abstract class UserStatsModel with _$UserStatsModel {
       currentStreak: entity.currentStreak,
       maxStreak: entity.maxStreak,
       totalPointsEarned: entity.totalPointsEarned,
+      missedCount: entity.missedCount,
       updatedAt: entity.updatedAt.toIso8601String(),
     );
   }

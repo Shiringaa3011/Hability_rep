@@ -15,6 +15,7 @@ abstract class HabitStatsModel with _$HabitStatsModel {
     @JsonKey(name: 'max_streak') required int maxStreak,
     @JsonKey(name: 'total_points_earned') required int totalPointsEarned,
     @JsonKey(name: 'completion_rate') required double completionRate,
+    @JsonKey(name: 'missed_count') @Default(0) int missedCount,
   }) = _HabitStatsModel;
 
   const HabitStatsModel._();
@@ -31,6 +32,7 @@ abstract class HabitStatsModel with _$HabitStatsModel {
       maxStreak: maxStreak,
       totalPointsEarned: totalPointsEarned,
       completionRate: completionRate,
+      missedCount: missedCount,
     );
   }
 
@@ -43,6 +45,7 @@ abstract class HabitStatsModel with _$HabitStatsModel {
       maxStreak: entity.maxStreak,
       totalPointsEarned: entity.totalPointsEarned,
       completionRate: entity.completionRate,
+      missedCount: entity.missedCount,
     );
   }
 }

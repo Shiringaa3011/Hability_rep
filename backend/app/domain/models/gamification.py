@@ -37,6 +37,7 @@ class HabitStats:
     max_streak: int
     total_points_earned: int
     completion_rate: float
+    missed_count: int = 0
 
 
 def calculate_level(total_points: int) -> int:

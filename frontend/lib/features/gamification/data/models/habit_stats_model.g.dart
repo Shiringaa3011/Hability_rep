@@ -15,6 +15,7 @@ _HabitStatsModel _$HabitStatsModelFromJson(Map<String, dynamic> json) =>
       maxStreak: (json['max_streak'] as num).toInt(),
       totalPointsEarned: (json['total_points_earned'] as num).toInt(),
       completionRate: (json['completion_rate'] as num).toDouble(),
+      missedCount: (json['missed_count'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$HabitStatsModelToJson(_HabitStatsModel instance) =>
@@ -26,4 +27,5 @@ Map<String, dynamic> _$HabitStatsModelToJson(_HabitStatsModel instance) =>
       'max_streak': instance.maxStreak,
       'total_points_earned': instance.totalPointsEarned,
       'completion_rate': instance.completionRate,
+      'missed_count': instance.missedCount,
     };

@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.domain.models.stats import StatsPeriod
 
@@ -17,6 +17,7 @@ class UserStatsResponse(BaseModel):
     total_points_earned: int = Field(
         ..., ge=0, description="Total points earned in period"
     )
+    missed_count: int = Field(..., ge=0, description="Missed completions in period")
     updated_at: datetime = Field(..., description="Last update timestamp")
 
     class Config:
@@ -31,6 +32,7 @@ class HabitStatsResponse(BaseModel):
     max_streak: int = Field(..., ge=0, description="Maximum streak")
     total_points_earned: int = Field(..., ge=0, description="Total points earned")
     completion_rate: float = Field(..., ge=0, le=100, description="Completion rate (%)")
+    missed_count: int = Field(..., ge=0, description="Missed completions in period")
 
     class Config:
         from_attributes = True
@@ -47,6 +49,19 @@ class UserHabitsStatsResponse(BaseModel):
         from_attributes = True
 
 
+class GroupMemberStatsResponse(BaseModel):
+    user_id: UUID
+    username: str = Field(..., description="Member username")
+    rank: int = Field(..., ge=1, description="Place in group rating")
+    total_completions: int = Field(..., ge=0, description="Member completions in period")
+    completion_rate: float = Field(
+        ..., ge=0, le=100, description="Member completion rate (%)"
+    )
+    total_points: int = Field(..., ge=0, description="Member points in period")
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class GroupStatsResponse(BaseModel):
     group_id: UUID
     period: StatsPeriod
@@ -54,7 +69,12 @@ class GroupStatsResponse(BaseModel):
     average_completion_rate: float = Field(
         ..., ge=0, le=100, description="Average completion rate (%)"
     )
-    members: List[dict] = Field(..., description="Member statistics")
+    total_points_group: int = Field(..., ge=0, description="Total group points")
+    active_members_count: int = Field(
+        ..., ge=0, description="Members with at least one completion"
+    )
+    members: List[GroupMemberStatsResponse] = Field(
+        ..., description="Ranked member statistics"
+    )
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

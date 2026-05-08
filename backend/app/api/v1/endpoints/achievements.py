@@ -69,11 +69,11 @@ async def get_user_achievements(user_id: UUID, db: AsyncSession = Depends(get_db
             )
         )
 
-    return {"achievements": UserAchievementsListResponse(
+    return UserAchievementsListResponse(
         user_id=user_id,
         earned_achievements=enriched_achievements,
         total_earned=len(enriched_achievements),
-    )}
+    )
 
 
 @router.get("/user/{user_id}/progress", response_model=AvailableAchievementsResponse)

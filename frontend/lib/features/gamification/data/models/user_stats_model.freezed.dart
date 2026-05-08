@@ -29,6 +29,8 @@ mixin _$UserStatsModel {
   int get totalPointsEarned;
   @JsonKey(name: 'updated_at')
   String get updatedAt;
+  @JsonKey(name: 'missed_count')
+  int get missedCount;
 
   /// Create a copy of UserStatsModel
   /// with the given fields replaced by the non-null parameter values.
@@ -59,17 +61,28 @@ mixin _$UserStatsModel {
             (identical(other.totalPointsEarned, totalPointsEarned) ||
                 other.totalPointsEarned == totalPointsEarned) &&
             (identical(other.updatedAt, updatedAt) ||
-                other.updatedAt == updatedAt));
+                other.updatedAt == updatedAt) &&
+            (identical(other.missedCount, missedCount) ||
+                other.missedCount == missedCount));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, userId, period, totalCompletions,
-      completionRate, currentStreak, maxStreak, totalPointsEarned, updatedAt);
+  int get hashCode => Object.hash(
+      runtimeType,
+      userId,
+      period,
+      totalCompletions,
+      completionRate,
+      currentStreak,
+      maxStreak,
+      totalPointsEarned,
+      updatedAt,
+      missedCount);
 
   @override
   String toString() {
-    return 'UserStatsModel(userId: $userId, period: $period, totalCompletions: $totalCompletions, completionRate: $completionRate, currentStreak: $currentStreak, maxStreak: $maxStreak, totalPointsEarned: $totalPointsEarned, updatedAt: $updatedAt)';
+    return 'UserStatsModel(userId: $userId, period: $period, totalCompletions: $totalCompletions, completionRate: $completionRate, currentStreak: $currentStreak, maxStreak: $maxStreak, totalPointsEarned: $totalPointsEarned, updatedAt: $updatedAt, missedCount: $missedCount)';
   }
 }
 
@@ -87,7 +100,8 @@ abstract mixin class $UserStatsModelCopyWith<$Res> {
       @JsonKey(name: 'current_streak') int currentStreak,
       @JsonKey(name: 'max_streak') int maxStreak,
       @JsonKey(name: 'total_points_earned') int totalPointsEarned,
-      @JsonKey(name: 'updated_at') String updatedAt});
+      @JsonKey(name: 'updated_at') String updatedAt,
+      @JsonKey(name: 'missed_count') int missedCount});
 }
 
 /// @nodoc
@@ -111,6 +125,7 @@ class _$UserStatsModelCopyWithImpl<$Res>
     Object? maxStreak = null,
     Object? totalPointsEarned = null,
     Object? updatedAt = null,
+    Object? missedCount = null,
   }) {
     return _then(_self.copyWith(
       userId: null == userId
@@ -145,6 +160,10 @@ class _$UserStatsModelCopyWithImpl<$Res>
           ? _self.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
               as String,
+      missedCount: null == missedCount
+          ? _self.missedCount
+          : missedCount // ignore: cast_nullable_to_non_nullable
+              as int,
     ));
   }
 }
@@ -250,7 +269,8 @@ extension UserStatsModelPatterns on UserStatsModel {
             @JsonKey(name: 'current_streak') int currentStreak,
             @JsonKey(name: 'max_streak') int maxStreak,
             @JsonKey(name: 'total_points_earned') int totalPointsEarned,
-            @JsonKey(name: 'updated_at') String updatedAt)?
+            @JsonKey(name: 'updated_at') String updatedAt,
+            @JsonKey(name: 'missed_count') int missedCount)?
         $default, {
     required TResult orElse(),
   }) {
@@ -265,7 +285,8 @@ extension UserStatsModelPatterns on UserStatsModel {
             _that.currentStreak,
             _that.maxStreak,
             _that.totalPointsEarned,
-            _that.updatedAt);
+            _that.updatedAt,
+            _that.missedCount);
       case _:
         return orElse();
     }
@@ -294,7 +315,8 @@ extension UserStatsModelPatterns on UserStatsModel {
             @JsonKey(name: 'current_streak') int currentStreak,
             @JsonKey(name: 'max_streak') int maxStreak,
             @JsonKey(name: 'total_points_earned') int totalPointsEarned,
-            @JsonKey(name: 'updated_at') String updatedAt)
+            @JsonKey(name: 'updated_at') String updatedAt,
+            @JsonKey(name: 'missed_count') int missedCount)
         $default,
   ) {
     final _that = this;
@@ -308,7 +330,8 @@ extension UserStatsModelPatterns on UserStatsModel {
             _that.currentStreak,
             _that.maxStreak,
             _that.totalPointsEarned,
-            _that.updatedAt);
+            _that.updatedAt,
+            _that.missedCount);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -336,7 +359,8 @@ extension UserStatsModelPatterns on UserStatsModel {
             @JsonKey(name: 'current_streak') int currentStreak,
             @JsonKey(name: 'max_streak') int maxStreak,
             @JsonKey(name: 'total_points_earned') int totalPointsEarned,
-            @JsonKey(name: 'updated_at') String updatedAt)?
+            @JsonKey(name: 'updated_at') String updatedAt,
+            @JsonKey(name: 'missed_count') int missedCount)?
         $default,
   ) {
     final _that = this;
@@ -350,7 +374,8 @@ extension UserStatsModelPatterns on UserStatsModel {
             _that.currentStreak,
             _that.maxStreak,
             _that.totalPointsEarned,
-            _that.updatedAt);
+            _that.updatedAt,
+            _that.missedCount);
       case _:
         return null;
     }
@@ -368,7 +393,8 @@ class _UserStatsModel extends UserStatsModel {
       @JsonKey(name: 'current_streak') required this.currentStreak,
       @JsonKey(name: 'max_streak') required this.maxStreak,
       @JsonKey(name: 'total_points_earned') required this.totalPointsEarned,
-      @JsonKey(name: 'updated_at') required this.updatedAt})
+      @JsonKey(name: 'updated_at') required this.updatedAt,
+      @JsonKey(name: 'missed_count') this.missedCount = 0})
       : super._();
   factory _UserStatsModel.fromJson(Map<String, dynamic> json) =>
       _$UserStatsModelFromJson(json);
@@ -396,6 +422,9 @@ class _UserStatsModel extends UserStatsModel {
   @override
   @JsonKey(name: 'updated_at')
   final String updatedAt;
+  @override
+  @JsonKey(name: 'missed_count')
+  final int missedCount;
 
   /// Create a copy of UserStatsModel
   /// with the given fields replaced by the non-null parameter values.
@@ -430,17 +459,28 @@ class _UserStatsModel extends UserStatsModel {
             (identical(other.totalPointsEarned, totalPointsEarned) ||
                 other.totalPointsEarned == totalPointsEarned) &&
             (identical(other.updatedAt, updatedAt) ||
-                other.updatedAt == updatedAt));
+                other.updatedAt == updatedAt) &&
+            (identical(other.missedCount, missedCount) ||
+                other.missedCount == missedCount));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, userId, period, totalCompletions,
-      completionRate, currentStreak, maxStreak, totalPointsEarned, updatedAt);
+  int get hashCode => Object.hash(
+      runtimeType,
+      userId,
+      period,
+      totalCompletions,
+      completionRate,
+      currentStreak,
+      maxStreak,
+      totalPointsEarned,
+      updatedAt,
+      missedCount);
 
   @override
   String toString() {
-    return 'UserStatsModel(userId: $userId, period: $period, totalCompletions: $totalCompletions, completionRate: $completionRate, currentStreak: $currentStreak, maxStreak: $maxStreak, totalPointsEarned: $totalPointsEarned, updatedAt: $updatedAt)';
+    return 'UserStatsModel(userId: $userId, period: $period, totalCompletions: $totalCompletions, completionRate: $completionRate, currentStreak: $currentStreak, maxStreak: $maxStreak, totalPointsEarned: $totalPointsEarned, updatedAt: $updatedAt, missedCount: $missedCount)';
   }
 }
 
@@ -460,7 +500,8 @@ abstract mixin class _$UserStatsModelCopyWith<$Res>
       @JsonKey(name: 'current_streak') int currentStreak,
       @JsonKey(name: 'max_streak') int maxStreak,
       @JsonKey(name: 'total_points_earned') int totalPointsEarned,
-      @JsonKey(name: 'updated_at') String updatedAt});
+      @JsonKey(name: 'updated_at') String updatedAt,
+      @JsonKey(name: 'missed_count') int missedCount});
 }
 
 /// @nodoc
@@ -484,6 +525,7 @@ class __$UserStatsModelCopyWithImpl<$Res>
     Object? maxStreak = null,
     Object? totalPointsEarned = null,
     Object? updatedAt = null,
+    Object? missedCount = null,
   }) {
     return _then(_UserStatsModel(
       userId: null == userId
@@ -518,6 +560,10 @@ class __$UserStatsModelCopyWithImpl<$Res>
           ? _self.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
               as String,
+      missedCount: null == missedCount
+          ? _self.missedCount
+          : missedCount // ignore: cast_nullable_to_non_nullable
+              as int,
     ));
   }
 }

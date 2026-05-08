@@ -16,6 +16,7 @@ _UserStatsModel _$UserStatsModelFromJson(Map<String, dynamic> json) =>
       maxStreak: (json['max_streak'] as num).toInt(),
       totalPointsEarned: (json['total_points_earned'] as num).toInt(),
       updatedAt: json['updated_at'] as String,
+      missedCount: (json['missed_count'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$UserStatsModelToJson(_UserStatsModel instance) =>
@@ -28,4 +29,5 @@ Map<String, dynamic> _$UserStatsModelToJson(_UserStatsModel instance) =>
       'max_streak': instance.maxStreak,
       'total_points_earned': instance.totalPointsEarned,
       'updated_at': instance.updatedAt,
+      'missed_count': instance.missedCount,
     };
