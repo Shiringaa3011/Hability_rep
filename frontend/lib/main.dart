@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'core/design_system/design_system.dart';
 import 'core/theme/theme_mode_controller.dart';
@@ -20,6 +21,8 @@ void main() async {
   await Hive.initFlutter();
 
   await ThemeModeController.init();
+
+  await initializeDateFormatting('ru');
 
   await di.init();
 

@@ -10,8 +10,10 @@ from app.schemas.stats import (
     GroupMemberStatsResponse,
     GroupStatsResponse,
     HabitStatsResponse,
+    TimelinePointResponse,
     UserHabitsStatsResponse,
     UserStatsResponse,
+    UserTimelineResponse,
 )
 
 router = APIRouter()
@@ -122,5 +124,29 @@ async def get_group_stats(
                 total_points=m.total_points,
             )
             for m in stats.members
+        ],
+    )
+
+
+@router.get("/user/{user_id}/timeline", response_model=UserTimelineResponse)
+async def get_user_timeline(
+    user_id: UUID,
+    period: StatsPeriod = Query(..., description="Statistics period (week or month)"),
+    db: AsyncSession = Depends(get_db),
+):
+    if period == StatsPeriod.DAY:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="period 'day' is not supported for timeline",
+        )
+
+    service = StatsService(db)
+    timeline = await service.get_user_timeline(user_id, period)
+
+    return UserTimelineResponse(
+        user_id=user_id,
+        period=period,
+        timeline=[
+            TimelinePointResponse(date=p.date, points=p.points) for p in timeline
         ],
     )

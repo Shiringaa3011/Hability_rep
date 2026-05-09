@@ -7,6 +7,7 @@ import '../../domain/entities/user_stats.dart';
 import '../models/achievement_model.dart';
 import '../models/group_stats_model.dart';
 import '../models/habit_stats_model.dart';
+import '../models/timeline_point_model.dart';
 import '../models/user_level_model.dart';
 import '../models/user_stats_model.dart';
 
@@ -15,7 +16,8 @@ abstract class GamificationRemoteDataSource {
 
   Future<UserStatsModel> getUserStats(String userId, StatsPeriod period);
 
-  Future<List<HabitStatsModel>> getUserHabitsStats(String userId, StatsPeriod period);
+  Future<List<HabitStatsModel>> getUserHabitsStats(
+      String userId, StatsPeriod period);
 
   Future<List<AchievementModel>> getAchievements(String userId);
 
@@ -24,6 +26,9 @@ abstract class GamificationRemoteDataSource {
   Future<List<Map<String, dynamic>>> getGroupAchievements(String groupId);
 
   Future<GroupStatsModel> getGroupStats(String groupId, StatsPeriod period);
+
+  Future<List<TimelinePointModel>> getUserTimeline(
+      String userId, StatsPeriod period);
 }
 
 class GamificationRemoteDataSourceImpl implements GamificationRemoteDataSource {
@@ -41,7 +46,8 @@ class GamificationRemoteDataSourceImpl implements GamificationRemoteDataSource {
       if (response.statusCode == 200) {
         return UserLevelModel.fromJson(response.data as Map<String, dynamic>);
       } else {
-        throw ServerException('Failed to get user level: ${response.statusCode}');
+        throw ServerException(
+            'Failed to get user level: ${response.statusCode}');
       }
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout ||
@@ -66,7 +72,8 @@ class GamificationRemoteDataSourceImpl implements GamificationRemoteDataSource {
       if (response.statusCode == 200) {
         return UserStatsModel.fromJson(response.data as Map<String, dynamic>);
       } else {
-        throw ServerException('Failed to get user stats: ${response.statusCode}');
+        throw ServerException(
+            'Failed to get user stats: ${response.statusCode}');
       }
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout ||
@@ -93,10 +100,12 @@ class GamificationRemoteDataSourceImpl implements GamificationRemoteDataSource {
         final data = response.data as Map<String, dynamic>;
         final habits = data['habits'] as List<dynamic>;
         return habits
-            .map((habit) => HabitStatsModel.fromJson(habit as Map<String, dynamic>))
+            .map((habit) =>
+                HabitStatsModel.fromJson(habit as Map<String, dynamic>))
             .toList();
       } else {
-        throw ServerException('Failed to get habits stats: ${response.statusCode}');
+        throw ServerException(
+            'Failed to get habits stats: ${response.statusCode}');
       }
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout ||
@@ -119,10 +128,12 @@ class GamificationRemoteDataSourceImpl implements GamificationRemoteDataSource {
         final data = response.data as Map<String, dynamic>;
         final achievements = data['achievements'] as List<dynamic>;
         return achievements
-            .map((ach) => AchievementModel.fromJson(ach as Map<String, dynamic>))
+            .map(
+                (ach) => AchievementModel.fromJson(ach as Map<String, dynamic>))
             .toList();
       } else {
-        throw ServerException('Failed to get achievements: ${response.statusCode}');
+        throw ServerException(
+            'Failed to get achievements: ${response.statusCode}');
       }
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout ||
@@ -135,7 +146,8 @@ class GamificationRemoteDataSourceImpl implements GamificationRemoteDataSource {
   }
 
   @override
-  Future<List<NewAchievementInfo>> completeHabit(String habitId, String userId) async {
+  Future<List<NewAchievementInfo>> completeHabit(
+      String habitId, String userId) async {
     try {
       final response = await dio.post(
         '${ApiConstants.gamificationPath}/complete-habit',
@@ -159,7 +171,8 @@ class GamificationRemoteDataSourceImpl implements GamificationRemoteDataSource {
           );
         }).toList();
       } else {
-        throw ServerException('Failed to complete habit: ${response.statusCode}');
+        throw ServerException(
+            'Failed to complete habit: ${response.statusCode}');
       }
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout ||
@@ -175,7 +188,8 @@ class GamificationRemoteDataSourceImpl implements GamificationRemoteDataSource {
   }
 
   @override
-  Future<GroupStatsModel> getGroupStats(String groupId, StatsPeriod period) async {
+  Future<GroupStatsModel> getGroupStats(
+      String groupId, StatsPeriod period) async {
     try {
       final response = await dio.get(
         '${ApiConstants.statsPath}/group/$groupId',
@@ -185,7 +199,8 @@ class GamificationRemoteDataSourceImpl implements GamificationRemoteDataSource {
       if (response.statusCode == 200) {
         return GroupStatsModel.fromJson(response.data as Map<String, dynamic>);
       } else {
-        throw ServerException('Failed to get group stats: ${response.statusCode}');
+        throw ServerException(
+            'Failed to get group stats: ${response.statusCode}');
       }
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout ||
@@ -200,7 +215,8 @@ class GamificationRemoteDataSourceImpl implements GamificationRemoteDataSource {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getGroupAchievements(String groupId) async {
+  Future<List<Map<String, dynamic>>> getGroupAchievements(
+      String groupId) async {
     try {
       final response = await dio.get(
         '${ApiConstants.achievementsPath}/group/$groupId/progress',
@@ -209,13 +225,43 @@ class GamificationRemoteDataSourceImpl implements GamificationRemoteDataSource {
       if (response.statusCode == 200) {
         final data = response.data as Map<String, dynamic>;
         final achievements = data['achievements'] as List<dynamic>;
-        return achievements
-            .map((a) => a as Map<String, dynamic>)
-            .toList();
+        return achievements.map((a) => a as Map<String, dynamic>).toList();
       } else {
         throw ServerException(
           'Failed to get group achievements: ${response.statusCode}',
         );
+      }
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        throw const NetworkException('Connection timeout');
+      } else {
+        throw ServerException('Network error: ${e.message}');
+      }
+    }
+  }
+
+  @override
+  Future<List<TimelinePointModel>> getUserTimeline(
+    String userId,
+    StatsPeriod period,
+  ) async {
+    try {
+      final response = await dio.get(
+        '${ApiConstants.statsPath}/user/$userId/timeline',
+        queryParameters: {'period': period.name},
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data as Map<String, dynamic>;
+        final timeline = data['timeline'] as List<dynamic>;
+        return timeline
+            .map((item) =>
+                TimelinePointModel.fromJson(item as Map<String, dynamic>))
+            .toList();
+      } else {
+        throw ServerException(
+            'Failed to get user timeline: ${response.statusCode}');
       }
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout ||
