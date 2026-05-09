@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/design_system/design_system.dart';
-import '../../../../injection_container.dart' as di;
 import '../../domain/entities/habit_stats.dart';
 import '../../domain/entities/user_stats.dart';
 import '../bloc/stats/stats_bloc.dart';
@@ -16,11 +15,7 @@ class StatsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => di.sl<StatsBloc>()
-        ..add(LoadStats(userId: userId, period: StatsPeriod.week)),
-      child: _StatsScaffold(userId: userId),
-    );
+    return _StatsScaffold(userId: userId);
   }
 }
 

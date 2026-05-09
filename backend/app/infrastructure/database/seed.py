@@ -4,7 +4,7 @@ import asyncio
 import uuid
 from datetime import datetime, timedelta
 
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import delete
 
 from app.core.database import AsyncSessionLocal
 from app.domain.models.achievement import AchievementType
@@ -18,6 +18,7 @@ from app.infrastructure.database.models import (
     HabitCompletionModel,
     HabitModel,
     UserModel,
+    UserStatsModel,
 )
 
 
@@ -26,9 +27,27 @@ async def seed_database():
     async with AsyncSessionLocal() as session:
         print("🌱 Starting database seeding...")
 
+        # Wipe test user's data so the seed is idempotent across re-runs
+        print("Cleaning up previous test data...")
+        test_user_id = uuid.UUID("00000000-0000-0000-0000-000000000001")
+        habit_ids = [uuid.UUID(f"00000000-0000-0000-0000-00000000000{i}") for i in range(2, 7)]
+        await session.execute(
+            delete(HabitCompletionModel).where(HabitCompletionModel.user_id == test_user_id)
+        )
+        await session.execute(
+            delete(HabitModel).where(HabitModel.id.in_(habit_ids))
+        )
+        await session.execute(
+            delete(UserStatsModel).where(UserStatsModel.user_id == test_user_id)
+        )
+        await session.execute(
+            delete(UserModel).where(UserModel.id == test_user_id)
+        )
+        await session.flush()
+        print("✓ Cleaned up test user data")
+
         # Create users
         print("Creating users...")
-        test_user_id = uuid.UUID("00000000-0000-0000-0000-000000000001")
         test_user = UserModel(
             id=test_user_id,
             username="test_user",
@@ -64,25 +83,55 @@ async def seed_database():
 
         # Create habits
         print("Creating habits...")
-        # Habits for test user
+        # Habits for test user (fixed UUIDs so the Flutter mock can reference them)
         test_habit1 = HabitModel(
-            id=uuid.uuid4(),
+            id=uuid.UUID("00000000-0000-0000-0000-000000000002"),
             user_id=test_user.id,
-            name="Morning Exercise",
-            description="30 minutes of exercise every morning",
+            name="Утренняя зарядка",
+            description="10 минут разминки",
             frequency=HabitFrequency.DAILY,
             difficulty=3,
             target_days=30,
             is_active=True,
         )
         test_habit2 = HabitModel(
-            id=uuid.uuid4(),
+            id=uuid.UUID("00000000-0000-0000-0000-000000000003"),
             user_id=test_user.id,
-            name="Read Books",
-            description="Read for 20 minutes before bed",
+            name="Стакан воды после пробуждения",
+            description=None,
+            frequency=HabitFrequency.DAILY,
+            difficulty=1,
+            target_days=60,
+            is_active=True,
+        )
+        test_habit3 = HabitModel(
+            id=uuid.UUID("00000000-0000-0000-0000-000000000004"),
+            user_id=test_user.id,
+            name="Чтение 20 минут",
+            description="Книга или статьи",
             frequency=HabitFrequency.DAILY,
             difficulty=2,
             target_days=60,
+            is_active=True,
+        )
+        test_habit4 = HabitModel(
+            id=uuid.UUID("00000000-0000-0000-0000-000000000005"),
+            user_id=test_user.id,
+            name="Медитация",
+            description=None,
+            frequency=HabitFrequency.DAILY,
+            difficulty=2,
+            target_days=30,
+            is_active=True,
+        )
+        test_habit5 = HabitModel(
+            id=uuid.UUID("00000000-0000-0000-0000-000000000006"),
+            user_id=test_user.id,
+            name="Прогулка 6000 шагов",
+            description=None,
+            frequency=HabitFrequency.DAILY,
+            difficulty=2,
+            target_days=30,
             is_active=True,
         )
         habit1 = HabitModel(
@@ -137,76 +186,96 @@ async def seed_database():
         )
 
         session.add_all(
-            [test_habit1, test_habit2, habit1, habit2, habit3, habit4, habit5]
+            [
+                test_habit1,
+                test_habit2,
+                test_habit3,
+                test_habit4,
+                test_habit5,
+                habit1,
+                habit2,
+                habit3,
+                habit4,
+                habit5,
+            ]
         )
         await session.flush()
-        print(f"✓ Created 7 habits (2 for test_user)")
+        print(f"✓ Created 10 habits (5 for test_user)")
 
         # Create habit completions (last 7 days)
         print("Creating habit completions...")
         completions = []
         today = datetime.now()
 
-        for i in range(7):
-            date = today - timedelta(days=i)
+        # Start from i=1 (yesterday) so today's habits are available to complete in the app
+        for i in range(1, 8):
+            completion_dt = today - timedelta(days=i)
+            completion_d = completion_dt.date()
             completions.append(
                 HabitCompletionModel(
                     id=uuid.uuid4(),
                     habit_id=test_habit1.id,
                     user_id=test_user.id,
-                    completed_at=date,
+                    completed_at=completion_dt,
+                    completion_date=completion_d,
                     points_earned=30 + i * 3,
-                    current_streak=i + 1,
+                    current_streak=8 - i,
                 )
             )
-            if i < 5:  # Not every day for reading
+            if i < 6:  # Not every day for reading
                 completions.append(
                     HabitCompletionModel(
                         id=uuid.uuid4(),
                         habit_id=test_habit2.id,
                         user_id=test_user.id,
-                        completed_at=date,
+                        completed_at=completion_dt,
+                        completion_date=completion_d,
                         points_earned=20 + i * 2,
-                        current_streak=i + 1,
+                        current_streak=6 - i,
                     )
                 )
 
         # User 1 completions - consistent performer
-        for i in range(7):
-            date = today - timedelta(days=i)
+        for i in range(1, 8):
+            completion_dt = today - timedelta(days=i)
+            completion_d = completion_dt.date()
             completions.append(
                 HabitCompletionModel(
                     id=uuid.uuid4(),
                     habit_id=habit1.id,
                     user_id=user1.id,
-                    completed_at=date,
-                    points_earned=30 + i * 3,  # Increasing with streak
-                    current_streak=i + 1,
+                    completed_at=completion_dt,
+                    completion_date=completion_d,
+                    points_earned=30 + i * 3,
+                    current_streak=8 - i,
                 )
             )
-            if i < 5:  # Not every day for reading
+            if i < 6:  # Not every day for reading
                 completions.append(
                     HabitCompletionModel(
                         id=uuid.uuid4(),
                         habit_id=habit2.id,
                         user_id=user1.id,
-                        completed_at=date,
+                        completed_at=completion_dt,
+                        completion_date=completion_d,
                         points_earned=20 + i * 2,
-                        current_streak=i + 1,
+                        current_streak=6 - i,
                     )
                 )
 
         # User 2 completions - high achiever
-        for i in range(7):
-            date = today - timedelta(days=i)
+        for i in range(1, 8):
+            completion_dt = today - timedelta(days=i)
+            completion_d = completion_dt.date()
             completions.append(
                 HabitCompletionModel(
                     id=uuid.uuid4(),
                     habit_id=habit3.id,
                     user_id=user2.id,
-                    completed_at=date,
+                    completed_at=completion_dt,
+                    completion_date=completion_d,
                     points_earned=20 + i * 2,
-                    current_streak=i + 1,
+                    current_streak=8 - i,
                 )
             )
 
@@ -217,6 +286,7 @@ async def seed_database():
                 habit_id=habit4.id,
                 user_id=user2.id,
                 completed_at=today - timedelta(days=1),
+                completion_date=(today - timedelta(days=1)).date(),
                 points_earned=30,
                 current_streak=1,
             )
@@ -224,13 +294,15 @@ async def seed_database():
 
         # User 3 completions - beginner
         for i in range(3):
-            date = today - timedelta(days=i)
+            completion_dt = today - timedelta(days=i)
+            completion_d = completion_dt.date()
             completions.append(
                 HabitCompletionModel(
                     id=uuid.uuid4(),
                     habit_id=habit5.id,
                     user_id=user3.id,
-                    completed_at=date,
+                    completed_at=completion_dt,
+                    completion_date=completion_d,
                     points_earned=10 + i,
                     current_streak=i + 1,
                 )
